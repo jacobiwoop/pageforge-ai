@@ -13,22 +13,22 @@ interface Product {
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const API_BASE = "http://localhost:8000";
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/products`);
-        const data = await res.json();
-        setProducts(data);
-      } catch (e) {
-        console.error("Failed to fetch products", e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProducts();
+    Promise.all([
+      fetch(`${API_BASE}/api/products`).then(res => res.json()),
+      fetch(`${API_BASE}/api/stats`).then(res => res.json())
+    ]).then(([productsData, statsData]) => {
+      setProducts(productsData);
+      setStats(statsData);
+    }).catch(e => {
+      console.error("Failed to fetch products/stats", e);
+    }).finally(() => {
+      setIsLoading(false);
+    });
   }, []);
 
   return (
@@ -98,26 +98,26 @@ export default function Products() {
             <Copy className="w-5 h-5 text-black bg-[var(--color-neon)] p-0.5" />
           </div>
           <div>
-            <div className="text-6xl font-bold tracking-tighter mb-4">842</div>
+            <div className="text-6xl font-bold tracking-tighter mb-4">{products.length}</div>
             <div className="w-full h-2 bg-gray-200 brutalist-border mb-2">
-              <div className="h-full bg-[var(--color-neon)] w-[75%] border-r-2 border-black"></div>
+              <div className="h-full bg-[var(--color-neon)] w-[100%] border-r-2 border-black"></div>
             </div>
-            <div className="text-[10px] font-mono text-gray-500 uppercase">ALLOCATION_REMAINING: 25%</div>
+            <div className="text-[10px] font-mono text-gray-500 uppercase">SYNCHRONIZED</div>
           </div>
         </div>
 
         <div className="bg-white brutalist-border p-6 flex flex-col justify-between">
           <div className="flex justify-between items-start mb-6">
-            <h3 className="text-xs font-bold tracking-wider uppercase">AI_GENERATED</h3>
+            <h3 className="text-xs font-bold tracking-wider uppercase">PAGES / SESSIONS</h3>
             <Settings className="w-5 h-5 text-white bg-black p-0.5" />
           </div>
           <div>
-            <div className="text-6xl font-bold tracking-tighter mb-4">1.2k</div>
+            <div className="text-6xl font-bold tracking-tighter mb-4">{stats ? stats.total_generations : <Loader2 className="w-8 h-8 animate-spin" />}</div>
             <div className="flex gap-1 mb-2">
               {[1,2,3,4].map(i => <div key={i} className="w-4 h-4 bg-[var(--color-neon)] brutalist-border"></div>)}
               <div className="w-4 h-4 bg-gray-200 brutalist-border"></div>
             </div>
-            <div className="text-[10px] font-mono text-gray-500 uppercase">AVERAGE_LATENCY: 44MS</div>
+            <div className="text-[10px] font-mono text-gray-500 uppercase">SQLITE STORE LOGS</div>
           </div>
         </div>
 

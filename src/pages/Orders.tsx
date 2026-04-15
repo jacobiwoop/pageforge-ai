@@ -1,7 +1,27 @@
-import { Download, Filter, MoreVertical, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Download, Filter, MoreVertical, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Orders() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ total_orders: 0, total_revenue: 0 });
+  const API_BASE = "http://localhost:8000";
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API_BASE}/api/orders/list`).then(res => res.json()),
+      fetch(`${API_BASE}/api/stats`).then(res => res.json())
+    ]).then(([ordersData, statsData]) => {
+      setOrders(ordersData);
+      setStats(statsData);
+      setIsLoading(false);
+    }).catch(e => {
+      console.error(e);
+      setIsLoading(false);
+    });
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-4 mb-2">
@@ -11,28 +31,28 @@ export default function Orders() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="TOTAL ORDERS" 
-          value="1,284" 
-          change="+12.5%" 
-          changeLabel="VS LAST MONTH" 
+          value={stats.total_orders.toString()} 
+          change="SYNCED" 
+          changeLabel="REAL-TIME" 
         />
         <div className="bg-white brutalist-border p-6 flex flex-col justify-between">
           <h3 className="text-xs font-bold text-gray-500 tracking-wider uppercase mb-4">ACTIVE PROCESSING</h3>
           <div>
-            <div className="text-4xl font-bold tracking-tighter mb-4">42</div>
+            <div className="text-4xl font-bold tracking-tighter mb-4">{orders.filter(o => o.status === 'PENDING').length}</div>
             <div className="w-full h-2 bg-gray-200 brutalist-border">
-              <div className="h-full bg-[var(--color-neon-dark)] w-[60%] border-r-2 border-black"></div>
+              <div className="h-full bg-[var(--color-neon-dark)] w-[100%] border-r-2 border-black"></div>
             </div>
           </div>
         </div>
         <StatCard 
-          title="REVENUE TODAY" 
-          value="$12.4K" 
+          title="TOTAL REVENUE" 
+          value={`$${stats.total_revenue.toLocaleString()}`} 
           changeLabel="REAL-TIME TELEMETRY" 
           noChangeBadge
         />
         <StatCard 
-          title="AVG VALUE" 
-          value="$294.00" 
+          title="SYSTEM LOAD" 
+          value="STABLE" 
           changeLabel="EFFICIENCY: 98.4%" 
           noChangeBadge
         />
@@ -65,46 +85,32 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 font-mono text-xs">
-              <OrderRow 
-                id="#ORD-9421-X"
-                client="Aris Thorne"
-                avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=Aris"
-                product="Neural Link v4"
-                amount="$1,299.00"
-                date="2023-11-24"
-                time="14:22:01"
-                status="PAID"
-              />
-              <OrderRow 
-                id="#ORD-9422-B"
-                client="Elowen Stark"
-                avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=Elowen"
-                product="Edge Processor XL"
-                amount="$3,450.00"
-                date="2023-11-24"
-                time="13:45:55"
-                status="PENDING"
-              />
-              <OrderRow 
-                id="#ORD-9423-Z"
-                client="Marcus Vane"
-                avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus"
-                product="Quantum Core S1"
-                amount="$12,000.00"
-                date="2023-11-24"
-                time="11:10:12"
-                status="SHIPPED"
-              />
-              <OrderRow 
-                id="#ORD-9424-P"
-                client="Liora Chen"
-                avatar="https://api.dicebear.com/7.x/avataaars/svg?seed=Liora"
-                product="Optic Array G7"
-                amount="$840.00"
-                date="2023-11-24"
-                time="10:02:44"
-                status="PAID"
-              />
+              {isLoading ? (
+                <tr>
+                   <td colSpan={7} className="p-10 text-center text-gray-500">
+                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                     FETCHING NEURAL LOGS...
+                   </td>
+                </tr>
+              ) : orders.length === 0 ? (
+                <tr>
+                   <td colSpan={7} className="p-10 text-center text-gray-500">NO ORDERS FOUND IN DATABASE</td>
+                </tr>
+              ) : (
+                orders.map((o, idx) => (
+                  <OrderRow 
+                    key={idx}
+                    id={o.id}
+                    client={o.client}
+                    avatar={`https://api.dicebear.com/7.x/avataaars/svg?seed=${o.client.replace(/ /g, '')}`}
+                    product={o.product}
+                    amount={o.amount}
+                    date={o.date}
+                    time={o.time}
+                    status={o.status}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>

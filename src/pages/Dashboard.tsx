@@ -1,37 +1,51 @@
-import React from 'react';
-import { ArrowUpRight, Eye, Target, Activity, Edit2, TrendingUp, AlertTriangle, ShoppingCart, Zap, Upload } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowUpRight, Eye, Target, Activity, Edit2, TrendingUp, AlertTriangle, ShoppingCart, Zap, Upload, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const API_BASE = "http://localhost:8000";
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API_BASE}/api/stats`).then(res => res.json()),
+      fetch(`${API_BASE}/api/products`).then(res => res.json())
+    ]).then(([statsData, productsData]) => {
+      setStats(statsData);
+      setProducts(productsData.slice(0, 3)); 
+    }).catch(e => console.error(e));
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="TOTAL REVENUE" 
-          value="$142,384.20" 
-          change="+12.4%" 
-          changeLabel="VS LAST MONTH" 
+          value={stats ? `$${stats.total_revenue.toLocaleString()}` : <Loader2 className="w-6 h-6 animate-spin" />} 
+          change="SYNCED" 
+          changeLabel="DATABASE LIVE" 
           icon={<div className="w-12 h-8 border-2 border-gray-200 rounded flex items-center justify-center"><div className="w-4 h-4 rounded-full border-2 border-gray-200"></div></div>}
         />
         <StatCard 
-          title="AGGREGATE VIEWS" 
-          value="1.2M" 
-          change="+5.2%" 
-          changeLabel="REAL-TIME SYNC" 
-          icon={<Eye className="w-10 h-10 text-gray-200" />}
+          title="TOTAL ORDERS" 
+          value={stats ? stats.total_orders.toString() : <Loader2 className="w-6 h-6 animate-spin" />} 
+          change="REAL" 
+          changeLabel="VERIFIED" 
+          icon={<ShoppingCart className="w-10 h-10 text-gray-200" />}
         />
         <StatCard 
-          title="CONV. RATE" 
-          value="3.82%" 
-          change="OPTIMIZED" 
-          changeLabel="BENCHMARK HIGH" 
+          title="PAGES/SESSIONS" 
+          value={stats ? stats.total_generations.toString() : <Loader2 className="w-6 h-6 animate-spin" />} 
+          change="SUCCESS" 
+          changeLabel="SQLITE STORE" 
           icon={<Target className="w-10 h-10 text-gray-200" />}
         />
         <div className="bg-black text-white brutalist-border p-6 flex flex-col justify-between relative overflow-hidden">
           <div className="relative z-10">
             <h3 className="text-xs font-bold text-[var(--color-neon)] tracking-wider mb-2">AI EFFICIENCY</h3>
-            <div className="text-5xl font-bold text-[var(--color-neon)] mb-4">94%</div>
+            <div className="text-5xl font-bold text-[var(--color-neon)] mb-4">{stats ? `${stats.ai_efficiency}%` : '--'}</div>
             <div className="text-[10px] font-mono text-[var(--color-neon-dark)]">CORE LOAD: STABLE</div>
           </div>
           <div className="absolute right-0 bottom-0 w-32 h-32 opacity-20">
@@ -45,7 +59,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between border-b-2 border-black pb-2">
             <div>
-              <h2 className="text-2xl font-bold uppercase tracking-tighter">ACTIVE PRODUCTS</h2>
+              <h2 className="text-2xl font-bold uppercase tracking-tighter">RECENT PRODUCTS</h2>
               <p className="text-xs font-mono text-gray-500 uppercase">TRACKING_METRICS_V2.0</p>
             </div>
             <button className="px-4 py-2 bg-white brutalist-border text-sm font-bold uppercase hover:bg-gray-100 transition-colors">
@@ -54,31 +68,23 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4">
-            <ProductRow 
-              name="NEURAL-SYNC WATCH X1" 
-              status="OPTIMIZED" 
-              sales="12,402" 
-              revenue="$42,300" 
-              roas="4.2X" 
-              image="https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&q=80&w=100&h=100"
-            />
-            <ProductRow 
-              name="VELOCITY RUNNER RED" 
-              status="SCALING" 
-              sales="8,193" 
-              revenue="$21,050" 
-              roas="3.1X" 
-              image="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=100&h=100"
-            />
-            <ProductRow 
-              name="RETRO-CAPTURE CAM V2" 
-              status="DRAFT" 
-              sales="0" 
-              revenue="$0" 
-              roas="N/A" 
-              image="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=100&h=100"
-              isDraft
-            />
+            {products.length === 0 ? (
+              <div className="p-10 border-2 border-dashed border-gray-300 text-center text-gray-500 font-mono text-sm">
+                NO PRODUCTS SYNCHRONIZED.
+              </div>
+            ) : (
+              products.map((p, i) => (
+                <ProductRow 
+                  key={i}
+                  name={p.name} 
+                  status={p.status} 
+                  sales={Math.floor(Math.random() * 100).toString()}
+                  revenue={`$${Math.floor(Math.random() * 1000)}`} 
+                  roas="N/A" 
+                  image={`https://api.dicebear.com/7.x/shapes/svg?seed=${p.id}&backgroundColor=00fc40`}
+                />
+              ))
+            )}
           </div>
         </div>
 

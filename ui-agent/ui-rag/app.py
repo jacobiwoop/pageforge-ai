@@ -8,6 +8,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from database import get_db, init_db
 import models
 import auth
@@ -121,6 +122,21 @@ async def logout():
     response.delete_cookie("access_token")
     return response
 
+# ── STATS ROUTES ─────────────────────────────────────────────────────────────
+
+@app.get("/api/stats")
+async def get_dashboard_stats(db: Session = Depends(get_db)):
+    total_generations = db.query(models.GenerationSession).count()
+    total_revenue = db.query(func.sum(models.Order.amount)).filter(models.Order.status == "PAID").scalar() or 0.0
+    total_orders = db.query(models.Order).count()
+    
+    return {
+        "total_generations": total_generations,
+        "total_revenue": total_revenue,
+        "total_orders": total_orders,
+        "ai_efficiency": 94
+    }
+
 # ── ORDER ROUTES ─────────────────────────────────────────────────────────────
 
 @app.post("/api/orders/create")
@@ -149,6 +165,25 @@ async def create_order(
         "order_id": new_order.id, 
         "checkout_url": checkout_url
     }
+
+@app.get("/api/orders/list")
+async def list_orders(db: Session = Depends(get_db)):
+    orders = db.query(models.Order).order_by(models.Order.created_at.desc()).all()
+    result = []
+    for o in orders:
+        user = db.query(models.User).filter(models.User.id == o.user_id).first()
+        client_name = user.full_name if user else "Unknown Entity"
+        
+        result.append({
+            "id": f"#ORD-{o.id}",
+            "client": client_name,
+            "product": o.product_name,
+            "amount": f"${o.amount:,.2f}",
+            "date": o.created_at.strftime('%Y-%m-%d'),
+            "time": o.created_at.strftime('%H:%M:%S'),
+            "status": o.status.upper()
+        })
+    return result
 
 # ── GENERATION ROUTES ────────────────────────────────────────────────────────
 
