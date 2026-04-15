@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chaussures de sport haute performance pour marathon - Technologie de pointe pour coureurs exigeants">
+    <title>Velocity Pro X1 | Chaussures Marathon Haute Performance</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#F8FAFC',
+                            primary: '#0F172A',
+                            text: '#1E293B',
+                            action: '#EF4444',
+                            secondary: '#3B82F6',
+                            border: '#E2E8F0',
+                            overlay: 'rgba(0,0,0,0.5)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        heading: ['Montserrat', 'Inter', 'system-ui', 'sans-serif']
+                    },
+                    borderRadius: {
+                        'md': '6px',
+                        'lg': '8px',
+                        'xl': '12px'
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(239,68,68,0.4)',
+                        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+                    },
+                    letterSpacing: {
+                        'tightest': '-0.02em',
+                        'tighter': '-0.01em',
+                        'wide': '0.05em',
+                        'wider': '0.02em'
+                    },
+                    animation: {
+                        'checkmark': 'checkmark 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards'
+                    },
+                    keyframes: {
+                        checkmark: {
+                            '0%': { strokeDashoffset: '100' },
+                            '100%': { strokeDashoffset: '0' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            html {
+                scroll-behavior: auto;
+            }
+        }
+        
+        /* Custom Utilities */
+        .text-balance {
+            text-wrap: balance;
+        }
+        
+        /* Image Loading Skeleton */
+        .image-skeleton {
+            background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+        
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Checkmark Animation */
+        .checkmark-path {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+        }
+        
+        .checkmark-animate .checkmark-path {
+            animation: checkmark 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+        
+        /* Focus Visible */
+        .focus-visible-ring:focus-visible {
+            outline: none;
+            ring: 2px;
+            ring-offset: 2px;
+            ring-color: #3B82F6;
+        }
+    </style>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans antialiased">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-brand-border z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <a href="#" class="font-heading font-extrabold text-2xl text-brand-primary tracking-tightest">
+                    VELOCITY<span class="text-brand-action">PRO</span>
+                </a>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-brand-text hover:text-brand-action transition-colors duration-150 font-medium">Caractéristiques</a>
+                    <a href="#technology" class="text-brand-text hover:text-brand-action transition-colors duration-150 font-medium">Technologie</a>
+                    <a href="#reviews" class="text-brand-text hover:text-brand-action transition-colors duration-150 font-medium">Avis</a>
+                    <a href="#faq" class="text-brand-text hover:text-brand-action transition-colors duration-150 font-medium">FAQ</a>
+                </div>
+                
+                <!-- Cart Icon -->
+                <button class="relative p-2 hover:bg-brand-bg rounded-lg transition-colors duration-150 cursor-pointer focus-visible-ring" aria-label="Panier">
+                    <svg class="w-6 h-6 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                    <span class="absolute -top-1 -right-1 bg-brand-action text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="pt-24 pb-16 md:pt-32 md:pb-24 bg-brand-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Product Info -->
+                <div class="order-2 lg:order-1">
+                    <!-- Badge -->
+                    <span class="inline-block bg-brand-secondary text-white text-xs font-medium px-3 py-1 rounded-md mb-6">
+                        NOUVEAUTÉ 2026
+                    </span>
+                    
+                    <!-- Title -->
+                    <h1 class="font-heading font-extrabold text-brand-primary tracking-tightest mb-4" style="font-size: clamp(2.25rem, 5vw, 4.5rem); line-height: 1.1;">
+                        Velocity Pro X1
+                    </h1>
+                    
+                    <!-- Subtitle -->
+                    <p class="text-brand-text text-lg md:text-xl mb-6 leading-relaxed max-w-xl">
+                        Chaussures de marathon haute performance. Conçues pour battre votre record personnel. Technologie de retour d'énergie de pointe.
+                    </p>
+                    
+                    <!-- Price -->
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="font-heading font-bold text-3xl text-brand-primary">189,99 €</span>
+                        <span class="text-brand-text line-through text-lg">249,99 €</span>
+                        <span class="bg-brand-action text-white text-sm font-bold px-3 py-1 rounded-md">-24%</span>
+                    </div>
+                    
+                    <!-- Size Selector -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-brand-text mb-3 tracking-wide">Taille (EU)</label>
+                        <div class="grid grid-cols-6 gap-2">
+                            <button class="size-btn w-full py-3 rounded-lg border border-brand-border bg-white text-brand-text font-medium hover:border-brand-primary hover:text-brand-primary transition-all duration-150 cursor-pointer focus-visible-ring" data-size="40">40</button>
+                            <button class="size-btn w-full py-3 rounded-lg border border-brand-border bg-white text-brand-text font-medium hover:border-brand-primary hover:text-brand-primary transition-all duration-150 cursor-pointer focus-visible-ring" data-size="41">41</button>
+                            <button class="size-btn w-full py-3 rounded-lg border border-brand-primary bg-brand-primary text-white font-medium shadow-md cursor-pointer focus-visible-ring" data-size="42">42</button>
+                            <button class="size-btn w-full py-3 rounded-lg border border-brand-border bg-white text-brand-text font-medium hover:border-brand-primary hover:text-brand-primary transition-all duration-150 cursor-pointer focus-visible-ring" data-size="43">43</button>
+                            <button class="size-btn w-full py-3 rounded-lg border border-brand-border bg-white text-brand-text font-medium hover:border-brand-primary hover:text-brand-primary transition-all duration-150 cursor-pointer focus-visible-ring" data-size="44">44</button>
+                            <button class="size-btn w-full py-3 rounded-lg border border-brand-border bg-white text-brand-text font-medium hover:border-brand-primary hover:text-brand-primary transition-all duration-150 cursor-pointer focus-visible-ring" data-size="45">45</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Color Selector -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-brand-text mb-3 tracking-wide">Couleur</label>
+                        <div class="flex gap-3">
+                            <button class="color-btn w-10 h-10 rounded-full border-2 border-brand-primary ring-2 ring-offset-2 ring-brand-primary cursor-pointer focus-visible-ring" style="background: #0F172A;" data-color="midnight" aria-label="Midnight Black"></button>
+                            <button class="color-btn w-10 h-10 rounded-full border-2 border-transparent opacity-60 hover:opacity-100 transition-opacity duration-150 cursor-pointer focus-visible-ring" style="background: #EF4444;" data-color="racing-red" aria-label="Racing Red"></button>
+                            <button class="color-btn w-10 h-10 rounded-full border-2 border-transparent opacity-60 hover:opacity-100 transition-opacity duration-150 cursor-pointer focus-visible-ring" style="background: #3B82F6;" data-color="electric-blue" aria-label="Electric Blue"></button>
+                            <button class="color-btn w-10 h-10 rounded-full border-2 border-transparent opacity-60 hover:opacity-100 transition-opacity duration-150 cursor-pointer focus-visible-ring" style="background: #F8FAFC; border-color: #E2E8F0;" data-color="arctic-white" aria-label="Arctic White"></button>
+                        </div>
+                    </div>
+                    
+                    <!-- CTA Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="addToCartBtn" class="add-to-cart-btn flex-1 bg-brand-action text-white font-heading font-bold text-lg py-4 px-8 rounded-md hover:bg-red-600 transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-glow active:translate-y-0 cursor-pointer focus-visible-ring">
+                            Ajouter au Panier
+                        </button>
+                        <button class="flex-1 bg-white text-brand-primary font-heading font-bold text-lg py-4 px-8 rounded-md border-2 border-brand-primary hover:bg-brand-primary hover:text-white transition-all duration-300 ease-out cursor-pointer focus-visible-ring">
+                            Essayer en Magasin
+                        </button>
+                    </div>
+                    
+                    <!-- Trust Badges -->
+                    <div class="flex items-center gap-6 mt-8 pt-8 border-t border-brand-border">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm font-medium text-brand-text">Livraison gratuite</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm font-medium text-brand-text">Retours 60 jours</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm font-medium text-brand-text">Garantie 2 ans</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Product Images -->
+                <div class="order-1 lg:order-2">
+                    <div class="relative group">
+                        <!-- Main Image -->
+                        <div class="bg-white rounded-xl overflow-hidden shadow-sm aspect-[4/3]">
+                            <img 
+                                src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                                alt="Chaussures de marathon Velocity Pro X1 - Vue latérale rouge" 
+                                class="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+                                loading="eager"
+                                decoding="async"
+                            />
+                        </div>
+                        
+                        <!-- Thumbnail Navigation -->
+                        <div class="flex gap-3 mt-4">
+                            <button class="thumbnail-btn flex-1 aspect-[4/3] rounded-lg overflow-hidden border-2 border-brand-primary opacity-100 cursor-pointer focus-visible-ring" aria-label="Vue 1">
+                                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Vue 1" class="w-full h-full object-cover"/>
+                            </button>
+                            <button class="thumbnail-btn flex-1 aspect-[4/3] rounded-lg overflow-hidden border-2 border-transparent opacity-60 hover:opacity-100 transition-all duration-150 cursor-pointer focus-visible-ring" aria-label="Vue 2">
+                                <img src="https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Vue 2" class="w-full h-full object-cover"/>
+                            </button>
+                            <button class="thumbnail-btn flex-1 aspect-[4/3] rounded-lg overflow-hidden border-2 border-transparent opacity-60 hover:opacity-100 transition-all duration-150 cursor-pointer focus-visible-ring" aria-label="Vue 3">
+                                <img src="https://images.unsplash.com/photo-1605348532760-6753d2c43329?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Vue 3" class="w-full h-full object-cover"/>
+                            </button>
+                            <button class="thumbnail-btn flex-1 aspect-[4/3] rounded-lg overflow-hidden border-2 border-transparent opacity-60 hover:opacity-100 transition-all duration-150 cursor-pointer focus-visible-ring" aria-label="Vue 4">
+                                <img src="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Vue 4" class="w-full h-full object-cover"/>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features" class="py-20 md:py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
+            <div class="text-center mb-16">
+                <h2 class="font-heading font-bold text-brand-primary mb-4" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2; letter-spacing: -0.01em;">
+                    Technologie de Performance
+                </h2>
+                <p class="text-brand-text text-lg max-w-2xl mx-auto">
+                    Chaque élément est conçu pour maximiser votre vitesse et minimiser la fatigue sur les longues distances.
+                </p>
+            </div>
+            
+            <!-- Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-brand-bg rounded-xl p-8 hover:shadow-md transition-shadow duration-300">
+                    <div class="w-14 h-14 bg-brand-action/10 rounded-lg flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-brand-action" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-heading font-semibold text-brand-primary text-xl mb-3">Retour d'Énergie 85%</h3>
+                    <p class="text-brand-text leading-relaxed">
+                        Semelle en carbone avec mousse PEBA ultra-réactive. Chaque foulée vous propulse vers l'avant avec un retour d'énergie maximal.
+                    </p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="bg-brand-bg rounded-xl p-8 hover:shadow-md transition-shadow duration-300">
+                    <div class="w-14 h-14 bg-brand-secondary/10 rounded-lg flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-heading font-semibold text-brand-primary text-xl mb-3">Poids Ultra-Léger</h3>
+                    <p class="text-brand-text leading-relaxed">
+                        Seulement 198g en taille 42. La tige en mesh monocoque offre un maintien optimal sans ajouter de poids superflu.
+                    </p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="bg-brand-bg rounded-xl p-8 hover:shadow-md transition-shadow duration-300">
+                    <div class="w-14 h-14 bg-brand-action/10 rounded-lg flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-brand-action" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-heading font-semibold text-brand-primary text-xl mb-3">Adhérence Maximale</h3>
+                    <p class="text-brand-text leading-relaxed">
+                        Semelle extérieure en caoutchouc avec motifs directionnels. Grip optimal sur route sèche et humide, même en virage serré.
+                    </p>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="bg-brand-bg rounded-xl p-8 hover:shadow-md transition-shadow duration-300">
+                    <div class="w-14 h-14 bg-brand-secondary/10 rounded-lg flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-heading font-semibold text-brand-primary text-xl mb-3">Respirabilité 360°</h3>
+                    <p class="text-brand-text leading-relaxed">
+                        Mesh technique perforé avec zones de ventilation stratégiques. Garde vos pieds au sec et à température optimale.
+                    </p>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="bg-brand-bg rounded-xl p-8 hover:shadow-md transition-shadow duration-300">
+                    <div class="w-14 h-14 bg-brand-action/10 rounded-lg flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-brand-action" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-heading font-semibold text-brand-primary text-xl mb-3">Drop 8mm Optimisé</h3>
+                    <p class="text-brand-text leading-relaxed">
+                        Différence de hauteur talon-avant-pied de 8mm. Équilibre parfait entre amorti et réactivité pour la course sur route.
+                    </p>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="bg-brand-bg rounded-xl p-8 hover:shadow-md transition-shadow duration-300">
+                    <div class="w-14 h-14 bg-brand-secondary/10 rounded-lg flex items-center justify-center mb-6">
+                        <svg class="w-7 h-7 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-heading font-semibold text-brand-primary text-xl mb-3">Certifié Marathon</h3>
+                    <p class="text-brand-text leading-relaxed">
+                        Testé et approuvé par des athlètes olympiques. Conçu spécifiquement pour les distances de 21km à 42km.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Technology Section -->
+    <section id="technology" class="py-20 md:py-24 bg-brand-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Image -->
+                <div class="relative">
+                    <div class="bg-white rounded-xl overflow-hidden shadow-lg aspect-[16/9]">
+                        <img 
+                            src="https://images.unsplash.com/photo-1556906781-9a412961d289?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                            alt="Technologie de semelle en carbone Velocity Pro X1" 
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    </div>
+                    <!-- Overlay Badge -->
+                    <div class="absolute bottom-4 left-4 bg-brand-overlay text-white px-4 py-2 rounded-lg backdrop-blur-sm">
+                        <span class="font-heading font-bold">Carbone Racing Plate™</span>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div>
+                    <h2 class="font-heading font-bold text-brand-primary mb-6" style="font-size: clamp(1.875rem, 4vw, 2.25rem); line-height: 1.3;">
+                        Ingénierie de Précision pour la Performance
+                    </h2>
+                    <p class="text-brand-text text-lg mb-8 leading-relaxed">
+                        La Velocity Pro X1 intègre 5 années de recherche biomécanique. Chaque composant a été optimisé pour convertir votre énergie en vitesse pure.
+                    </p>
+                    
+                    <!-- Tech Specs -->
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-brand-action/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="font-heading font-bold text-brand-action">01</span>
+                            </div>
+                            <div>
+                                <h4 class="font-heading font-semibold text-brand-primary mb-1">Plaque Carbone Full-Length</h4>
+                                <p class="text-brand-text text-sm">Rigidité optimisée pour un effet levier maximal à chaque propulsion.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-brand-action/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="font-heading font-bold text-brand-action">02</span>
+                            </div>
+                            <div>
+                                <h4 class="font-heading font-semibold text-brand-primary mb-1">Mousse PEBA Super-Critique</h4>
+                                <p class="text-brand-text text-sm">Densité variable pour amorti au talon et réactivité à l'avant-pied.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-brand-action/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="font-heading font-bold text-brand-action">03</span>
+                            </div>
+                            <div>
+                                <h4 class="font-heading font-semibold text-brand-primary mb-1">Tige Monocoque Engineered Mesh</h4>
+                                <p class="text-brand-text text-sm">Maintien dynamique qui s'adapte à la dilatation du pied pendant l'effort.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Social Proof / Reviews Section -->
+    <section id="reviews" class="py-20 md:py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
+            <div class="text-center mb-16">
+                <h2 class="font-heading font-bold text-brand-primary mb-4" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2; letter-spacing: -0.01em;">
+                    Approuvé par les Coureurs
+                </h2>
+                <p class="text-brand-text text-lg max-w-2xl mx-auto mb-8">
+                    Plus de 10 000 athlètes ont déjà battu leur record personnel avec la Velocity Pro X1.
+                </p>
+                
+                <!-- Rating Summary -->
+                <div class="flex items-center justify-center gap-4">
+                    <div class="flex items-center gap-1">
+                        <svg class="w-6 h-6 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-6 h-6 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-6 h-6 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-6 h-6 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-6 h-6 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <span class="font-heading font-bold text-2xl text-brand-primary">4.9/5</span>
+                    <span class="text-brand-text">(2,847 avis)</span>
+                </div>
+            </div>
+            
+            <!-- Reviews Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Review 1 -->
+                <div class="bg-brand-bg rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-1 mb-4">
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <p class="text-brand-text mb-4 leading-relaxed">"J'ai battu mon record de 3min sur marathon avec ces chaussures. Le retour d'énergie est incroyable, surtout après le 30ème kilomètre."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand-secondary rounded-full flex items-center justify-center text-white font-bold">T</div>
+                        <div>
+                            <p class="font-heading font-semibold text-brand-primary text-sm">Thomas R.</p>
+                            <p class="text-brand-text text-xs">Marathon: 2h47</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Review 2 -->
+                <div class="bg-brand-bg rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-1 mb-4">
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <p class="text-brand-text mb-4 leading-relaxed">"Premier marathon en moins de 3 heures grâce à la Velocity Pro X1. Confort exceptionnel même sur la distance reine."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand-action rounded-full flex items-center justify-center text-white font-bold">M</div>
+                        <div>
+                            <p class="font-heading font-semibold text-brand-primary text-sm">Marie L.</p>
+                            <p class="text-brand-text text-xs">Marathon: 2h58</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Review 3 -->
+                <div class="bg-brand-bg rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-1 mb-4">
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-brand-action" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <p class="text-brand-text mb-4 leading-relaxed">"La meilleure chaussure de compétition que j'ai essayée. Légère, réactive, et incroyablement confortable sur 42km."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand-secondary rounded-full flex items-center justify-center text-white font-bold">J</div>
+                        <div>
+                            <p class="font-heading font-semibold text-brand-primary text-sm">Julien D.</p>
+                            <p class="text-brand-text text-xs">Marathon: 2h52</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 pt-12 border-t border-brand-border">
+                <div class="text-center">
+                    <p class="font-heading font-extrabold text-4xl text-brand-action mb-2">10K+</p>
+                    <p class="text-brand-text text-sm font-medium">Athlètes satisfaits</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-heading font-extrabold text-4xl text-brand-action mb-2">4.9</p>
+                    <p class="text-brand-text text-sm font-medium">Note moyenne</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-heading font-extrabold text-4xl text-brand-action mb-2">98%</p>
+                    <p class="text-brand-text text-sm font-medium">Recommandent</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-heading font-extrabold text-4xl text-brand-action mb-2">2h47</p>
+                    <p class="text-brand-text text-sm font-medium">Meilleur temps enregistré</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing / CTA Section -->
+    <section class="py-20 md:py-24 bg-brand-primary">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="font-heading font-bold text-white mb-6" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2; letter-spacing: -0.01em;">
+                Prêt à Battre Votre Record ?
+            </h2>
+            <p class="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
+                Rejoignez les milliers de coureurs qui ont déjà franchi la ligne avec la Velocity Pro X1.
+            </p>
+            
+            <!-- Price Card -->
+            <div class="bg-white rounded-xl p-8 md:p-12 shadow-xl mb-8">
+                <div class="flex items-center justify-center gap-4 mb-6">
+                    <span class="text-brand-text line-through text-2xl">249,99 €</span>
+                    <span class="font-heading font-extrabold text-5xl text-brand-primary">189,99 €</span>
+                </div>
+                <p class="text-brand-action font-bold text-lg mb-8">Économisez 60 € aujourd'hui</p>
+                
+                <button class="add-to-cart-btn w-full md:w-auto bg-brand-action text-white font-heading font-bold text-xl py-5 px-12 rounded-md hover:bg-red-600 transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-glow active:translate-y-0 cursor-pointer focus-visible-ring">
+                    Commander Maintenant
+                </button>
+                
+                <p class="text-brand-text text-sm mt-6">
+                    <span class="inline-flex items-center gap-2">
+                        <svg class="w-4 h-4 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Livraison gratuite • Retours 60 jours • Garantie 2 ans
+                    </span>
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 md:py-24 bg-white">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
+            <div class="text-center mb-16">
+                <h2 class="font-heading font-bold text-brand-primary mb-4" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2; letter-spacing: -0.01em;">
+                    Questions Fréquentes
+                </h2>
+                <p class="text-brand-text text-lg">
+                    Tout ce que vous devez savoir avant de commander.
+                </p>
+            </div>
+            
+            <!-- FAQ Items -->
+            <div class="space-y-4">
+                <!-- FAQ 1 -->
+                <div class="faq-item border border-brand-border rounded-lg overflow-hidden">
+                    <button class="faq-trigger w-full flex items-center justify-between p-6 text-left bg-white hover:bg-brand-bg transition-colors duration-150 cursor-pointer focus-visible-ring" aria-expanded="false">
+                        <span class="font-heading font-semibold text-brand-primary">Quelle est la différence avec le modèle précédent ?</span>
+                        <svg class="w-5 h-5 text-brand-primary transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div class="faq-content hidden px-6 pb-6">
+                        <p class="text-brand-text leading-relaxed">
+                            La Velocity Pro X1 améliore le retour d'énergie de 15% grâce à une nouvelle formulation de mousse PEBA. La plaque carbone est également 12% plus légère tout en maintenant la même rigidité. Le poids total passe de 220g à 198g.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- FAQ 2 -->
+                <div class="faq-item border border-brand-border rounded-lg overflow-hidden">
+                    <button class="faq-trigger w-full flex items-center justify-between p-6 text-left bg-white hover:bg-brand-bg transition-colors duration-150 cursor-pointer focus-visible-ring" aria-expanded="false">
+                        <span class="font-heading font-semibold text-brand-primary">Convient-elle aux débutants en marathon ?</span>
+                        <svg class="w-5 h-5 text-brand-primary transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div class="faq-content hidden px-6 pb-6">
+                        <p class="text-brand-text leading-relaxed">
+                            Oui, absolument. Bien que conçue pour la performance, la Velocity Pro X1 offre un amorti généreux qui protège les articulations. Nous recommandons cependant de les utiliser d'abord sur des sorties courtes pour s'adapter à la sensation de réactivité.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- FAQ 3 -->
+                <div class="faq-item border border-brand-border rounded-lg overflow-hidden">
+                    <button class="faq-trigger w-full flex items-center justify-between p-6 text-left bg-white hover:bg-brand-bg transition-colors duration-150 cursor-pointer focus-visible-ring" aria-expanded="false">
+                        <span class="font-heading font-semibold text-brand-primary">Quelle pointure choisir ?</span>
+                        <svg class="w-5 h-5 text-brand-primary transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div class="faq-content hidden px-6 pb-6">
+                        <p class="text-brand-text leading-relaxed">
+                            La Velocity Pro X1 taille normalement. Pour le marathon, nous conseillons de prendre une demi-pointure au-dessus de votre taille habituelle pour accommoder la dilatation du pied sur la distance. Consultez notre guide des tailles pour plus de précisions.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- FAQ 4 -->
+                <div class="faq-item border border-brand-border rounded-lg overflow-hidden">
+                    <button class="faq-trigger w-full flex items-center justify-between p-6 text-left bg-white hover:bg-brand-bg transition-colors duration-150 cursor-pointer focus-visible-ring" aria-expanded="false">
+                        <span class="font-heading font-semibold text-brand-primary">Combien de kilomètres d'autonomie ?</span>
+                        <svg class="w-5 h-5 text-brand-primary transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div class="faq-content hidden px-6 pb-6">
+                        <p class="text-brand-text leading-relaxed">
+                            La mousse PEBA conserve 80% de ses propriétés après 800km. La semelle extérieure en caoutchouc haute densité est conçue pour durer toute la saison de compétition. Pour l'entraînement quotidien, nous recommandons un modèle d'entraînement dédié.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- FAQ 5 -->
+                <div class="faq-item border border-brand-border rounded-lg overflow-hidden">
+                    <button class="faq-trigger w-full flex items-center justify-between p-6 text-left bg-white hover:bg-brand-bg transition-colors duration-150 cursor-pointer focus-visible-ring" aria-expanded="false">
+                        <span class="font-heading font-semibold text-brand-primary">Politique de retour et garantie ?</span>
+                        <svg class="w-5 h-5 text-brand-primary transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div class="faq-content hidden px-6 pb-6">
+                        <p class="text-brand-text leading-relaxed">
+                            Vous disposez de 60 jours pour tester vos chaussures, même en courant. Si elles ne vous conviennent pas, retour gratuit. La garantie constructeur couvre tout défaut de fabrication pendant 2 ans.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-brand-primary text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <!-- Brand -->
+                <div class="col-span-1 md:col-span-2">
+                    <a href="#" class="font-heading font-extrabold text-2xl tracking-tightest mb-4 block">
+                        VELOCITY<span class="text-brand-action">PRO</span>
+                    </a>
+                    <p class="text-slate-400 leading-relaxed mb-6 max-w-sm">
+                        Chaussures de performance conçues pour les athlètes exigeants. Technologie de pointe, résultats mesurables.
+                    </p>
+                    <!-- Social Links -->
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-brand-action transition-colors duration-150 cursor-pointer" aria-label="Facebook">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-brand-action transition-colors duration-150 cursor-pointer" aria-label="Instagram">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-brand-action transition-colors duration-150 cursor-pointer" aria-label="Twitter">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-brand-action transition-colors duration-150 cursor-pointer" aria-label="YouTube">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Links 1 -->
+                <div>
+                    <h4 class="font-heading font-bold text-white mb-4">Produits</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Marathon</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Semi-Marathon</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Entraînement</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Trail</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Accessoires</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Links 2 -->
+                <div>
+                    <h4 class="font-heading font-bold text-white mb-4">Support</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Guide des tailles</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Livraison & Retours</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">FAQ</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Contact</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors duration-150">Garantie</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Bottom Bar -->
+            <div class="pt-8 border-t border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-slate-400 text-sm">
+                    © 2026 Velocity Pro. Tous droits réservés.
+                </p>
+                <div class="flex gap-6">
+                    <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors duration-150">Confidentialité</a>
+                    <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors duration-150">CGV</a>
+                    <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors duration-150">Mentions légales</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Sticky Mobile Add-to-Cart Bar -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-border p-4 z-50 shadow-xl">
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="font-heading font-bold text-brand-primary text-lg">189,99 €</p>
+                <p class="text-brand-text text-xs">Livraison gratuite</p>
+            </div>
+            <button class="add-to-cart-btn flex-1 bg-brand-action text-white font-heading font-bold py-4 px-6 rounded-md hover:bg-red-600 transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-glow active:translate-y-0 cursor-pointer focus-visible-ring">
+                Ajouter au Panier
+            </button>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // Size Selector
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.size-btn').forEach(b => {
+                    b.classList.remove('bg-brand-primary', 'text-white', 'border-brand-primary', 'shadow-md');
+                    b.classList.add('bg-white', 'text-brand-text', 'border-brand-border');
+                });
+                this.classList.remove('bg-white', 'text-brand-text', 'border-brand-border');
+                this.classList.add('bg-brand-primary', 'text-white', 'border-brand-primary', 'shadow-md');
+            });
+        });
+        
+        // Color Selector
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-btn').forEach(b => {
+                    b.classList.remove('border-brand-primary', 'ring-2', 'ring-offset-2', 'ring-brand-primary');
+                    b.classList.add('border-transparent', 'opacity-60');
+                });
+                this.classList.remove('border-transparent', 'opacity-60');
+                this.classList.add('border-brand-primary', 'ring-2', 'ring-offset-2', 'ring-brand-primary', 'opacity-100');
+            });
+        });
+        
+        // Thumbnail Navigation
+        document.querySelectorAll('.thumbnail-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.thumbnail-btn').forEach(b => {
+                    b.classList.remove('border-brand-primary', 'opacity-100');
+                    b.classList.add('border-transparent', 'opacity-60');
+                });
+                this.classList.remove('border-transparent', 'opacity-60');
+                this.classList.add('border-brand-primary', 'opacity-100');
+            });
+        });
+        
+        // Add to Cart Animation
+        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const originalText = this.innerHTML;
+                const originalBg = this.classList.contains('bg-brand-action');
+                
+                // Success state
+                this.classList.remove('bg-brand-action');
+                this.classList.add('bg-green-500');
+                this.innerHTML = `
+                    <span class="inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 checkmark-animate" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path class="checkmark-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Ajouté !
+                    </span>
+                `;
+                
+                // Update cart count
+                const cartCount = document.querySelector('nav .absolute');
+                cartCount.textContent = parseInt(cartCount.textContent) + 1;
+                
+                // Revert after 2s
+                setTimeout(() => {
+                    this.classList.add('bg-brand-action');
+                    this.classList.remove('bg-green-500');
+                    this.innerHTML = originalText;
+                }, 2000);
+            });
+        });
+        
+        // FAQ Accordion
+        document.querySelectorAll('.faq-trigger').forEach(trigger => {
+            trigger.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                const content = this.nextElementSibling;
+                const icon = this.querySelector('svg');
+                
+                // Close all
+                document.querySelectorAll('.faq-trigger').forEach(t => {
+                    t.setAttribute('aria-expanded', 'false');
+                    t.nextElementSibling.classList.add('hidden');
+                    t.querySelector('svg').classList.remove('rotate-180');
+                });
+                
+                // Open clicked if was closed
+                if (!isExpanded) {
+                    this.setAttribute('aria-expanded', 'true');
+                    content.classList.remove('hidden');
+                    icon.classList.add('rotate-180');
+                }
+            });
+        });
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

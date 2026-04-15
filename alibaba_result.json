@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "data": {
+    "success": false,
+    "error": "Captcha détecté",
+    "pageTitle": "Captcha Interception",
+    "screenshot": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABQAAAAOECAYAAAD+FZwDAAAAAXNSR0IArs4c6QAAIABJREFUeJzs3Xl0FFXi9vGnOvseIIQdRMCA..."
+  }
+}

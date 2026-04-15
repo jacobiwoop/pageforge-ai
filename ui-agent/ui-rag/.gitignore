@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+vectordb/
+sessions/
+exports/
+node_modules/
+.venv/
+*.json
+!content_plans.json
+!marketing_strategies.json
+!product_synthesis.json
+!ali_extraction_alibaba_result.json
