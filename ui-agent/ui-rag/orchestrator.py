@@ -65,6 +65,7 @@ def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = 
     log("\n--- 2. SYNTHÈSE PRODUIT ---")
     set_progress(25)
     synthesis = synthesize_product_data(raw_data, model=model)
+    product_name = synthesis.get('title', 'Produit Sans Nom')
     with open(synthesis_path, "w", encoding="utf-8") as f:
         json.dump(synthesis, f, indent=2, ensure_ascii=False)
 
@@ -114,7 +115,15 @@ def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = 
     # 7. GÉNÉRATION HTML FINAL
     log("\n--- 7. GÉNÉRATION HTML FINAL (FUSION STYLE + CONTENU) ---")
     set_progress(90)
-    html_code = generate_html(spec_path, product_query, model, content_data=final_content, cwd=base_dir)
+    html_result = generate_html(spec_path, product_query, model, content_data=final_content, cwd=base_dir)
+    
+    opencode_session_id = None
+    if isinstance(html_result, dict) and html_result.get("success"):
+        html_code = html_result.get("html", "")
+        opencode_session_id = html_result.get("session_id")
+    else:
+        log(f"   ❌ Erreur de génération HTML: {html_result}")
+        return
     
     output_filename = f"final_page.html"
     output_path = os.path.join(base_dir, output_filename)
@@ -127,11 +136,18 @@ def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = 
     with open(global_output, "w", encoding="utf-8") as f:
         f.write(html_code)
 
-    log(f"\n✨ PAGE TERMINÉE !")
-    log(f"📍 Session : {output_path}")
-    log(f"📍 Global  : {global_output}")
+    # 8. SAUVEGARDE FINALE
+    log("\n--- 8. SAUVEGARDE FINALE ---")
+    set_progress(95)
     
-    return global_output
+    final_output_url = global_output
+
+    log(f"\n✨ PAGE TERMINÉE !")
+    log(f"📍 Résultat : {final_output_url}")
+    if opencode_session_id:
+        log(f"🧠 Session IA : {opencode_session_id}")
+    
+    return final_output_url, opencode_session_id, product_name
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Orchestrateur UI-RAG")

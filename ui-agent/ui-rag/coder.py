@@ -38,7 +38,7 @@ Génère une page HTML unique, complète et professionnelle pour ce produit.
 - CONVERSION : Ne génère JAMAIS de bouton "Ajouter au panier". Utilise uniquement des boutons "Commander" ou "Acheter maintenant".
 - PAIEMENT : Intègre un formulaire ou un script FedaPay pour le paiement direct. Utilise le endpoint local `/api/orders/create` pour enregistrer la commande avant le paiement.
 - Implémente tous les modules listés dans le contenu rédactionnel (Hero, Benefits, etc.).
-- Le code doit être dans un seul bloc de code HTML.
+- Le code doit OBLIGATOIREMENT être sauvegardé dans un fichier nommé exactement `final_page.html` dans l'espace de travail.
 """
 
     print(f"\n🚀 Génération du HTML via OpenCode (Modèle: {model})...")
@@ -64,6 +64,7 @@ Génère une page HTML unique, complète et professionnelle pour ce produit.
         cmd = [
             "opencode", "run", 
             "--model", opencode_model, 
+            "--format", "json",
             "--dangerously-skip-permissions", 
             full_prompt
         ]
@@ -81,30 +82,28 @@ Génère une page HTML unique, complète et professionnelle pour ce produit.
             return f"Erreur OpenCode (code {result.returncode}) : {result.stderr or result.stdout}"
         
         raw_output = result.stdout.strip()
+        raw_output = result.stdout + "\n" + result.stderr
         
-        # 5. Extraction du code HTML
-        if "<html>" in raw_output.lower() or "<!doctype html>" in raw_output.lower():
-            import re
-            start_match = re.search(r"(<!DOCTYPE html>|<html>)", raw_output, re.IGNORECASE)
-            end_match = raw_output.lower().rfind("</html>")
-            
-            if start_match and end_match != -1:
-                return raw_output[start_match.start():end_match + 7]
+        session_id = None
+        for line in raw_output.split('\n'):
+            line = line.strip()
+            if not line: continue
+            try:
+                data = json.loads(line)
+                if "sessionID" in data:
+                    session_id = data["sessionID"]
+                    break
+            except:
+                pass
 
-        # 6. Fallback : Si opencode a créé un fichier
-        if ".html" in raw_output:
-            import re
-            # Chercher un chemin absolu ou relatif dans le dossier de travail
-            file_match = re.search(r"([\w\-/.]+\.html)", raw_output)
-            if file_match:
-                filename = file_match.group(1)
-                full_path = os.path.join(working_dir, filename) if not os.path.isabs(filename) else filename
-                if os.path.exists(full_path):
-                    print(f"   📂 Fichier détecté : {full_path}. Lecture en cours...")
-                    with open(full_path, "r", encoding="utf-8") as f:
-                        return f.read()
-
-        return raw_output
+        # Au lieu de parser l'output pour le HTML, on compte sur la commande de sauvegarde d'OpenCode
+        output_file = os.path.join(working_dir, "final_page.html")
+        if os.path.exists(output_file):
+             with open(output_file, "r", encoding="utf-8") as f:
+                 html_content = f.read()
+             return {"success": True, "html": html_content, "session_id": session_id}
+        
+        return f"Erreur : 'final_page.html' non généré. SessionID: {session_id}"
     except subprocess.TimeoutExpired:
         return "Erreur : Timeout de 20 minutes dépassé pour la génération du code."
     except Exception as e:

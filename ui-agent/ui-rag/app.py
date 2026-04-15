@@ -58,6 +58,7 @@ class GenerationStatus(BaseModel):
     progress: int
     logs: List[str]
     result_url: Optional[str] = None
+    product_name: Optional[str] = None
 
 class UserRegister(BaseModel):
     email: str
@@ -221,6 +222,7 @@ async def get_status(session_id: str, db: Session = Depends(get_db)):
         progress=session.progress,
         logs=json.loads(session.logs),
         result_url=session.result_url,
+        product_name=session.product_name,
     )
 
 @app.get("/api/session/{session_id}/files")
@@ -244,31 +246,30 @@ async def list_session_files(session_id: str):
     return sorted(files, key=lambda x: x["name"])
 
 @app.get("/api/products")
-async def list_products():
-    """List all generated products in the exports directory."""
+async def list_products(db: Session = Depends(get_db)):
+    """List all successfully generated products from the DB."""
+    sessions = db.query(models.GenerationSession).filter(
+        models.GenerationSession.status == "completed"
+    ).order_by(models.GenerationSession.created_at.desc()).all()
+    
     products = []
-    if os.path.exists(EXPORT_DIR):
-        for filename in os.listdir(EXPORT_DIR):
-            if filename.endswith(".html"):
-                path = os.path.join(EXPORT_DIR, filename)
-                stats = os.stat(path)
-                products.append({
-                    "id": filename.split('_')[-1].split('.')[0] if '_' in filename else filename,
-                    "name": filename.replace('.html', '').replace('_', ' ').capitalize(),
-                    "filename": filename,
-                    "url": f"/exports/{filename}",
-                    "date": datetime.fromtimestamp(stats.st_mtime).strftime('%Y.%m.%d'),
-                    "time": datetime.fromtimestamp(stats.st_mtime).strftime('%H:%M:%S'),
-                    "status": "LIVE"
-                })
-    return sorted(products, key=lambda x: x["date"] + x["time"], reverse=True)
+    for s in sessions:
+        products.append({
+            "id": s.id,
+            "name": s.product_name or "Project Sans Nom",
+            "url": s.result_url,
+            "date": s.created_at.strftime('%Y.%m.%d'),
+            "time": s.created_at.strftime('%H:%M:%S'),
+            "status": "LIVE"
+        })
+    return products
 
 from database import SessionLocal
 
 async def orchestrate_session(session_id: str, url: str):
     """Bridge between FastAPI and the existing orchestrator logic."""
     try:
-        def update_db(status=None, progress=None, add_log=None, result_url=None):
+        def update_db(status=None, progress=None, add_log=None, result_url=None, opencode_session_id=None):
             db = SessionLocal()
             try:
                 sess = db.query(models.GenerationSession).filter(models.GenerationSession.id == session_id).first()
@@ -279,6 +280,10 @@ async def orchestrate_session(session_id: str, url: str):
                         sess.progress = progress
                     if result_url is not None:
                         sess.result_url = result_url
+                    if product_name is not None:
+                        sess.product_name = product_name
+                    if opencode_session_id is not None:
+                        sess.opencode_session_id = opencode_session_id
                     if add_log is not None:
                         current_logs = json.loads(sess.logs)
                         current_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {add_log}")
@@ -301,7 +306,7 @@ async def orchestrate_session(session_id: str, url: str):
 
         # Run the pipeline (blocking call in thread to avoid blocking event loop)
         loop = asyncio.get_event_loop()
-        result_path = await loop.run_in_executor(
+        result = await loop.run_in_executor(
             None, 
             run_full_pipeline, 
             url, 
@@ -311,15 +316,123 @@ async def orchestrate_session(session_id: str, url: str):
             progress_callback  # progress callback
         )
 
-        if result_path and os.path.exists(result_path):
-            update_db(status="completed", progress=100, result_url=f"/{result_path}")
-            log_to_session("Génération réussie !")
+        opencode_session_id = None
+        product_name = None
+        if isinstance(result, tuple) and len(result) == 3:
+            result_path, opencode_session_id, product_name = result
+        else:
+            result_path = result
+
+        if result_path:
+            if result_path.startswith("http"):
+                update_db(status="completed", progress=100, result_url=result_path, opencode_session_id=opencode_session_id, product_name=product_name)
+                log_to_session("Génération et déploiement Vercel réussis !")
+            elif os.path.exists(result_path):
+                update_db(status="completed", progress=100, result_url=f"/{result_path}", opencode_session_id=opencode_session_id, product_name=product_name)
+                log_to_session("Génération réussie !")
+            else:
+                raise Exception("L'orchestrateur n'a pas produit de fichier final valide.")
         else:
             raise Exception("L'orchestrateur n'a pas produit de fichier final.")
             
     except Exception as e:
         logger.error(f"Error in session {session_id}: {str(e)}")
         update_db(status="failed", add_log=f"ERREUR : {str(e)}")
+
+class RefactorRequest(BaseModel):
+    session_id: str
+    prompt: str
+
+@app.post("/api/refactor")
+async def refactor_session(request: RefactorRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    sess = db.query(models.GenerationSession).filter(models.GenerationSession.id == request.session_id).first()
+    if not sess:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if not sess.opencode_session_id:
+        raise HTTPException(status_code=400, detail="Cette session ne supporte pas le refactoring continu (Pas d'ID OpenCode).")
+
+    background_tasks.add_task(orchestrate_refactor, request.session_id, request.prompt, sess.opencode_session_id)
+    return {"status": "started"}
+
+async def orchestrate_refactor(session_id: str, prompt: str, opencode_session_id: str):
+    import subprocess
+    try:
+        def update_db(status=None, add_log=None):
+            db = SessionLocal()
+            try:
+                sess = db.query(models.GenerationSession).filter(models.GenerationSession.id == session_id).first()
+                if sess:
+                    if status is not None:
+                        sess.status = status
+                    if add_log is not None:
+                        current_logs = json.loads(sess.logs) if sess.logs else []
+                        current_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {add_log}")
+                        sess.logs = json.dumps(current_logs)
+                    db.commit()
+            finally:
+                db.close()
+
+        update_db(status="processing", add_log=f"🧠 Début du refactoring AI: '{prompt}'")
+        
+        base_dir = os.path.join(SESSION_DIR, session_id)
+        
+        # 1. Call OpenCode
+        cmd = [
+            "opencode", "run",
+            "--model", "ollama-cloud/qwen3-coder-next",
+            "--session", opencode_session_id,
+            "--dangerously-skip-permissions",
+            prompt
+        ]
+        
+        env = os.environ.copy()
+        home = os.path.expanduser("~")
+        env["PATH"] = f"{home}/.opencode/bin:{home}/.bun/bin:{env.get('PATH', '')}"
+
+        update_db(add_log="   ⚙️ Exécution de la modification par l'IA...")
+        result = subprocess.run(cmd, env=env, capture_output=True, text=True, cwd=base_dir, timeout=600)
+        
+        if result.returncode != 0:
+            update_db(status="completed", add_log=f"❌ Erreur IA: {result.stderr or result.stdout}")
+            return
+            
+        # Update local completion
+        update_db(status="completed", add_log="   ✅ Modification locale réussie.")
+            
+    except Exception as e:
+        logger.error(f"Error in refactor {session_id}: {str(e)}")
+        update_db(status="completed", add_log=f"❌ ERREUR Refactor : {str(e)}")
+
+class PublishRequest(BaseModel):
+    session_id: str
+
+@app.post("/api/publish")
+async def publish_session(request: PublishRequest, db: Session = Depends(get_db)):
+    sess = db.query(models.GenerationSession).filter(models.GenerationSession.id == request.session_id).first()
+    if not sess:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    vercel_token = os.getenv("VERCEL_TOKEN")
+    if not vercel_token:
+        raise HTTPException(status_code=500, detail="VERCEL_TOKEN not configured")
+        
+    base_dir = os.path.join(SESSION_DIR, request.session_id)
+    if not os.path.exists(base_dir):
+        raise HTTPException(status_code=404, detail="Session files not found")
+        
+    try:
+        from vercel_deployer import deploy_to_vercel
+        live_url = deploy_to_vercel(base_dir, vercel_token)
+        
+        if live_url:
+            sess.result_url = live_url
+            db.commit()
+            return {"status": "success", "url": live_url}
+        else:
+            raise HTTPException(status_code=500, detail="Vercel deployment failed")
+    except Exception as e:
+        logger.error(f"Error deploying to Vercel: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

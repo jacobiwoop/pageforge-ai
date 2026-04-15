@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 // Types
 interface LogEntry {
@@ -27,25 +29,7 @@ interface Stage {
   status: 'pending' | 'active' | 'completed' | 'error';
 }
 
-// Simple Syntax Highlighter
-const highlightCode = (code: string, ext: string) => {
-  if (!code) return "";
-  if (ext === 'json') {
-    return code
-      .replace(/(".*?")(\s*:)/g, '<span class="text-blue-400">$1</span>$2')
-      .replace(/(:\s*)(".*?")/g, '$1<span class="text-emerald-400">$2</span>')
-      .replace(/\b(true|false|null)\b/g, '<span class="text-amber-400">$1</span>')
-      .replace(/\b(\d+)\b/g, '<span class="text-purple-400">$1</span>');
-  }
-  if (ext === 'html') {
-    return code
-      .replace(/(&lt;[a-z0-9]+)/gi, '<span class="text-rose-400">$1</span>')
-      .replace(/(&lt;\/[a-z0-9]+&gt;)/gi, '<span class="text-rose-400">$1</span>')
-      .replace(/([a-z-]+)(=)/gi, '<span class="text-blue-300">$1</span>$2')
-      .replace(/(".*?")/g, '<span class="text-emerald-400">$1</span>');
-  }
-  return code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-};
+// Highlighting is now handled by react-syntax-highlighter
 
 export default function Generate() {
   const { user, logout } = useAuth();
@@ -53,6 +37,7 @@ export default function Generate() {
   const [formMode, setFormMode] = useState<'link' | 'text'>('link');
   const [url, setUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [showDetails, setShowDetails] = useState(false);
@@ -61,6 +46,7 @@ export default function Generate() {
   const [selectedFile, setSelectedFile] = useState<SessionFile | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [previewTab, setPreviewTab] = useState<'preview' | 'code'>('preview');
+  const [chatInput, setChatInput] = useState('');
 
   // Pipeline Stages
   const [stages, setStages] = useState<Stage[]>([
@@ -104,13 +90,33 @@ export default function Generate() {
     }
   };
 
+  const handleChatSubmit = async () => {
+    if (!chatInput.trim() || !sessionId || isGenerating) return;
+    const prompt = chatInput.trim();
+    setChatInput('');
+    setIsGenerating(true);
+    setLogs(prev => [...prev, { message: `MODIFICATION_REQUEST: ${prompt}`, time: new Date().toLocaleTimeString(), type: 'info' }]);
+    
+    try {
+      await fetch(`${API_BASE}/api/refactor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, prompt })
+      });
+    } catch (err) {
+      setLogs(prev => [...prev, { message: "CORE_FAILURE: API_UNREACHABLE", time: new Date().toLocaleTimeString(), type: 'error' }]);
+      setIsGenerating(false);
+    }
+  };
+
   const fetchSessionFiles = async (id: string) => {
     try {
       const res = await fetch(`${API_BASE}/api/session/${id}/files`);
       if (res.ok) {
         const files = await res.json();
         setSessionFiles(files);
-        if (!selectedFile && files.length > 0) {
+        // Only set default if no file is selected OR if the selected file doesn't belong to this latest session
+        if ((!selectedFile || !files.find((f: SessionFile) => f.name === selectedFile.name)) && files.length > 0) {
           const mainFile = files.find((f: SessionFile) => f.name === 'final_page.html') || files[files.length - 1];
           setSelectedFile(mainFile);
         }
@@ -198,90 +204,36 @@ export default function Generate() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs, showDetails]);
 
-  if (isCheckingAuth) {
-    return (
-      <div className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center gap-4 text-zinc-500">
-        <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
-        <span className="text-[10px] font-mono tracking-widest uppercase">Initializing neural auth...</span>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('session_id');
+    if (sid && sid !== sessionId) {
+      setSessionId(sid);
+      setViewMode('split');
+      // Sync state from server
+      fetch(`${API_BASE}/api/status/${sid}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.logs) {
+              const formattedLogs = data.logs.map((l: string) => ({
+                message: l.split('] ')[1] || l,
+                time: l.match(/\[(.*?)\]/)?.[1] || new Date().toLocaleTimeString(),
+                type: (l.includes('ERREUR') || l.includes('❌')) ? 'error' : 
+                      (l.includes('réussie') || l.includes('Succès') || l.includes('✅') || l.includes('✨')) ? 'success' : 'info'
+              }));
+              setLogs(formattedLogs);
+              logCountRef.current = data.logs.length;
+            }
+            if (data.progress) setProgress(data.progress);
+            if (data.url) setUrl(data.url);
+        })
+        .catch(err => console.error("Failed to recover session", err));
+      fetchSessionFiles(sid);
+    }
+  }, []);
 
   if (!user) {
-    return (
-      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-zinc-900 border-4 border-black shadow-[12px_12px_0px_#000] p-10 space-y-8 animate-in fade-in zoom-in duration-500">
-           <div className="text-center space-y-2">
-             <div className="inline-block p-3 bg-zinc-800 rounded-2xl mb-4">
-                <Sparkles className="w-8 h-8 text-emerald-400" />
-             </div>
-             <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Raw_Logic_AI</h1>
-             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Identify to proceed</p>
-           </div>
-
-           <form onSubmit={handleAuthSubmit} className="space-y-6">
-              {authMode === 'register' && (
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Full Name</label>
-                  <input 
-                    required
-                    value={authData.full_name}
-                    onChange={(e) => setAuthData({...authData, full_name: e.target.value})}
-                    type="text" 
-                    placeholder="John Doe" 
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all"
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Neural ID (Email)</label>
-                <input 
-                  required
-                  value={authData.email}
-                  onChange={(e) => setAuthData({...authData, email: e.target.value})}
-                  type="email" 
-                  placeholder="name@nexus.com" 
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Access Protocol (Password)</label>
-                <input 
-                  required
-                  value={authData.password}
-                  onChange={(e) => setAuthData({...authData, password: e.target.value})}
-                  type="password" 
-                  placeholder="••••••••" 
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all"
-                />
-              </div>
-
-              {authError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] rounded-lg text-center flex items-center justify-center gap-2">
-                   <AlertCircle className="w-4 h-4" />
-                   {authError}
-                </div>
-              )}
-
-              <button 
-                type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-5 rounded-2xl uppercase text-sm tracking-widest transition-all shadow-[0_4px_20px_rgba(16,185,129,0.2)] active:scale-95"
-              >
-                {authMode === 'login' ? 'Infiltrate System (Login)' : 'Initialize Core (Register)'}
-              </button>
-           </form>
-
-           <div className="text-center pt-4">
-              <button 
-                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                className="text-[11px] font-bold text-zinc-600 hover:text-white uppercase transition-colors"
-              >
-                {authMode === 'login' ? "Don't have an ID? Register" : "Already have an ID? Login"}
-              </button>
-           </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (viewMode === 'split') {
@@ -289,7 +241,7 @@ export default function Generate() {
       <div className="fixed inset-0 top-[80px] md:left-[256px] flex bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
         
         {/* PANEL 1: CONVERSATIONAL CHAT */}
-        <div className="w-80 lg:w-[450px] flex flex-col border-r border-zinc-800 bg-zinc-950">
+        <div className="w-80 lg:w-[450px] shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950">
           <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/30">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-zinc-500" />
@@ -394,21 +346,31 @@ export default function Generate() {
           <div className="p-4 border-t border-zinc-800 bg-zinc-900/10">
             <div className="relative group">
                <input 
-                disabled 
-                placeholder={isGenerating ? "Agent is processing current task..." : "Type a command..."} 
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-4 pr-12 text-sm focus:outline-none opacity-50 cursor-not-allowed shadow-inner"
+                disabled={isGenerating || !sessionId} 
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleChatSubmit();
+                }}
+                placeholder={isGenerating ? "Agent is processing current task..." : !sessionId ? "Waiting for active session..." : "Type a command to edit the page..."} 
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-4 pr-12 text-sm focus:outline-none focus:border-emerald-500/50 transition-all text-white placeholder:opacity-50 shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
                />
                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500">
+                  <button 
+                    onClick={handleChatSubmit}
+                    disabled={isGenerating || !sessionId || !chatInput.trim()}
+                    className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 flex items-center justify-center text-white disabled:text-zinc-500 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                  >
                     <Send className="w-4 h-4" />
-                  </div>
+                  </button>
                </div>
             </div>
           </div>
         </div>
 
         {/* PANEL 2: COMPACT FILE EXPLORER */}
-        <div className="w-56 border-r border-zinc-800 bg-zinc-950 flex flex-col">
+        {previewTab === 'code' && (
+          <div className="w-56 shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col">
           <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
              <div className="flex items-center gap-2">
                 <FolderTree className="w-3.5 h-3.5 text-zinc-500" />
@@ -435,9 +397,10 @@ export default function Generate() {
             ))}
           </div>
         </div>
+        )}
 
         {/* PANEL 3: MAIN VIEWER AREA */}
-        <div className="flex-1 flex flex-col bg-zinc-950">
+        <div className="flex-1 min-w-0 flex flex-col bg-zinc-950">
           <div className="h-14 border-b border-zinc-800 flex items-center justify-between px-6 bg-zinc-950/80 backdrop-blur-md z-10 shadow-sm">
             <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50">
               <button 
@@ -463,20 +426,28 @@ export default function Generate() {
             </div>
             
             <div className="flex items-center gap-4">
-               {!isGenerating && (
+               {sessionId && !isGenerating && (
                  <button 
-                    onClick={() => setViewMode('form')}
-                    className="flex items-center gap-2 text-[10px] font-bold uppercase text-zinc-500 hover:text-white transition-all bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800"
+                    onClick={async () => {
+                      setIsPublishing(true);
+                      try {
+                        const res = await fetch(`${API_BASE}/api/publish`, { method: 'POST', body: JSON.stringify({ session_id: sessionId }), headers: {'Content-Type': 'application/json'} });
+                        const data = await res.json();
+                        if (data.url) {
+                          alert(`Publié avec succès: ${data.url}`);
+                          window.open(data.url, '_blank');
+                        }
+                      } finally {
+                        setIsPublishing(false);
+                      }
+                    }}
+                    disabled={isPublishing}
+                    className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 transition-colors px-5 py-2.5 rounded-lg"
                  >
-                   <ArrowLeft className="w-3 h-3" />
-                   New Deployment
+                   {isPublishing ? <Loader2 className="w-4 h-4 animate-spin"/> : <Zap className="w-4 h-4 text-amber-300" />}
+                   Publish
                  </button>
                )}
-               <div className="h-4 w-[1px] bg-zinc-800"></div>
-               <div className="text-[11px] font-mono text-zinc-500 flex items-center gap-2">
-                  <span className="opacity-30">CUR_FILE:</span>
-                  <span className="text-zinc-400">{selectedFile?.name || "INIT..."}</span>
-               </div>
             </div>
           </div>
 
@@ -486,11 +457,15 @@ export default function Generate() {
                 <iframe src={`${API_BASE}${selectedFile.url}`} className="w-full h-full border-none" />
               </div>
             ) : (
-              <div className="w-full h-full overflow-auto p-8 font-mono text-[13px] bg-zinc-950 text-zinc-300 selection:bg-zinc-700 selection:text-white">
-                <pre 
-                  className="leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: highlightCode(fileContent, selectedFile?.ext || '') }} 
-                />
+              <div className="w-full h-full overflow-auto bg-zinc-950 custom-scrollbar">
+                <SyntaxHighlighter
+                  language={selectedFile?.ext === 'html' ? 'xml' : selectedFile?.ext === 'js' || selectedFile?.ext === 'jsx' ? 'javascript' : selectedFile?.ext || 'text'}
+                  style={vscDarkPlus}
+                  customStyle={{ margin: 0, padding: '2rem', fontSize: '13px', background: 'transparent' }}
+                  showLineNumbers={true}
+                >
+                  {fileContent}
+                </SyntaxHighlighter>
               </div>
             )}
           </div>

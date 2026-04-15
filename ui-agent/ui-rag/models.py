@@ -37,5 +37,7 @@ class GenerationSession(Base):
     status = Column(String, default="starting")
     progress = Column(Integer, default=0)
     result_url = Column(String, nullable=True)
+    product_name = Column(String, nullable=True)
     logs = Column(String, default="[]")
+    opencode_session_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

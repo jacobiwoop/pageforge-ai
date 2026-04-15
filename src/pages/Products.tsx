@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Filter, ExternalLink, Copy, Settings, Terminal, Loader2 } from 'lucide-react';
+import { Download, Filter, ExternalLink, Copy, Settings, Terminal, Loader2, Edit3 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { Link } from 'react-router-dom';
 
 interface Product {
   id: string;
@@ -170,7 +171,7 @@ function ProductTableRow({ image, name, id, status, date, time, url, disabled = 
         <div className="text-gray-500">{date}</div>
         <div className="font-bold">{time}</div>
       </td>
-      <td className="p-4">
+      <td className="p-4 flex gap-2">
         <a 
           href={url}
           target="_blank"
@@ -181,8 +182,18 @@ function ProductTableRow({ image, name, id, status, date, time, url, disabled = 
           )}
         >
           <ExternalLink className="w-3 h-3" />
-          VIEW_PAGE
+          PREVIEW
         </a>
+        <Link 
+          to={`/generate?session_id=${id}`}
+          className={cn(
+            "px-4 py-2 brutalist-border inline-flex items-center gap-2 text-xs font-bold uppercase transition-colors bg-black text-white hover:bg-gray-800",
+            disabled && "opacity-50 pointer-events-none"
+          )}
+        >
+          <Edit3 className="w-3 h-3 text-[var(--color-neon)]" />
+          EDIT_SESSION
+        </Link>
       </td>
     </tr>
   );

@@ -4,6 +4,14 @@
 # Utilise des chemins absolus pour plus de robustesse
 
 PROJECT_ROOT="/home/aiko/Documents/agent-cli"
+
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    set -a
+    . "$PROJECT_ROOT/.env"
+    set +a
+    echo "🔑 Variables d'environnement (.env) chargées avec succès."
+fi
+
 echo "🚀 Démarrage global depuis : $PROJECT_ROOT"
 
 # Fonction de nettoyage
@@ -37,8 +45,10 @@ echo "   ✅ Scraper lancé en arrière-plan."
 echo "⚙️ [2/3] Lancement du Backend (FastAPI)..."
 (
     cd "$PROJECT_ROOT/ui-agent/ui-rag"
-    if [ -f ".venv/bin/python" ]; then
-        .venv/bin/python app.py > "$PROJECT_ROOT/backend.log" 2>&1
+    if [ -n "$VIRTUAL_ENV" ]; then
+        "$VIRTUAL_ENV/bin/python" app.py > "$PROJECT_ROOT/backend.log" 2>&1
+    elif [ -f "$PROJECT_ROOT/.venv/bin/python" ]; then
+        "$PROJECT_ROOT/.venv/bin/python" app.py > "$PROJECT_ROOT/backend.log" 2>&1
     else
         python3 app.py > "$PROJECT_ROOT/backend.log" 2>&1
     fi
