@@ -147,9 +147,9 @@ def print_analysis(analysis: dict):
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 
-def run_pipeline(query: str, model: str, as_json: bool, verbose: bool) -> tuple:
+def run_pipeline(query: str, model: str, as_json: bool, verbose: bool, design_brief: str = "") -> tuple:
     print("\n⚙️  Analyse de la requête...")
-    analysis = analyze(query)
+    analysis = analyze(query, design_brief=design_brief)
     if verbose:
         print_analysis(analysis)
 

@@ -17,8 +17,9 @@ RÈGLES :
 1. Titre : Crée un titre court, élégant et mémorable (max 10 mots). Enlève les termes "China Factory", "Supplier", etc.
 2. Synthèse : Rédige 2-3 paragraphes qui vendent le bénéfice principal et l'émotion du produit.
 3. Caractéristiques : Liste les 5 points techniques les plus importants.
-4. Langue : Réponds en Français.
-5. Format : Retourne UNIQUEMENT un JSON avec les clés : "title", "synthesis", "features" (liste), "images" (garder les 5 meilleures URLs).
+4. Design Brief (Nouveau) : Décris en une phrase l'ambiance visuelle idéale pour ce produit (ex: "Minimaliste et luxueux", "Dynamique et sportif", "Technique et futuriste"). Évite les termes génériques comme "fort" ou "robuste" sauf si c'est indispensable.
+5. Langue : Réponds en Français.
+6. Format : Retourne UNIQUEMENT un JSON avec les clés : "title", "synthesis", "features" (liste), "design_brief", "images" (garder les 5 meilleures URLs).
 
 RÉPONSE JSON :
 """

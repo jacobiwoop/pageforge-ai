@@ -26,15 +26,17 @@ STYLE_KEYWORDS = {
     "glassmorphism": ["verre", "glass", "transparent", "blur", "frosted"],
     "minimalism": ["minimal", "clean", "simple", "épuré", "minimaliste"],
     "dark mode": ["dark", "sombre", "nuit", "night", "noir"],
-    "brutalism": ["brutal", "raw", "brut", "fort", "bold"],
+    "brutalism": ["brutal", "raw", "brut", "neo-brutalism"], # "fort" and "bold" removed
     "elegant": ["élégant", "luxe", "premium", "raffiné", "luxury"],
     "playful": ["fun", "ludique", "coloré", "joyeux", "jeune"],
     "professional": ["professionnel", "corporate", "sérieux", "b2b"],
 }
 
 
-def analyze(query: str) -> dict:
-    """Extrait le contexte structuré depuis une requête libre."""
+def analyze(query: str, design_brief: str = "") -> dict:
+    """Extrait le contexte structuré depuis une requête et un brief optionnel."""
+    # On combine la requête (titre) et le brief design pour la détection de style
+    full_context = f"{query} {design_brief}".lower()
     q = query.lower()
 
     # Détection stack
@@ -56,7 +58,7 @@ def analyze(query: str) -> dict:
     # Détection style
     detected_styles = []
     for style, keywords in STYLE_KEYWORDS.items():
-        if any(kw in q for kw in keywords):
+        if any(kw in full_context for kw in keywords):
             detected_styles.append(style)
     if not detected_styles:
         detected_styles = ["professional"]

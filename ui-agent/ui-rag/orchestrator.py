@@ -72,8 +72,12 @@ def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = 
     log("\n--- 3. GÉNÉRATION DU DESIGN SYSTEM (STYLE) ---")
     set_progress(40)
     product_query = synthesis.get('title', 'produit e-commerce')
+    design_brief = synthesis.get('design_brief', '')
     log(f"   🎨 Analyse du style pour : {product_query}")
-    direction, analysis = run_pipeline(product_query, model, as_json=True, verbose=False)
+    if design_brief:
+        log(f"   📝 Brief Visuel : {design_brief}")
+    
+    direction, analysis = run_pipeline(product_query, model, as_json=True, verbose=False, design_brief=design_brief)
     
     log("   🏗️  Expansion vers Master Specification...")
     system_prompt = expand_to_system_prompt(direction, analysis, model=model)
