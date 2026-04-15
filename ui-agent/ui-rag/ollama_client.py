@@ -3,6 +3,7 @@ Ollama Client — gère les appels à Ollama/Qwen avec streaming et feedback.
 """
 
 import json
+import time
 import urllib.request
 import urllib.error
 
@@ -10,9 +11,12 @@ import urllib.error
 OLLAMA_URL = "http://localhost:11434/api/chat"
 DEFAULT_MODEL = "qwen3.5:cloud"
 
+MAX_RETRIES = 5
+RETRY_DELAY = 15  # secondes entre chaque retry
+
 
 def _call_ollama(messages: list, model: str, stream: bool = True) -> dict | str:
-    """Appel bas niveau à l'API Ollama."""
+    """Appel bas niveau à l'API Ollama avec retry sur 429."""
     payload = json.dumps({
         "model": model,
         "messages": messages,
@@ -30,12 +34,9 @@ def _call_ollama(messages: list, model: str, stream: bool = True) -> dict | str:
         method="POST"
     )
 
-    import time
-    max_retries = 3
-    retry_delay = 2
     full_response = ""
 
-    for attempt in range(max_retries):
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
                 if stream:
@@ -57,44 +58,40 @@ def _call_ollama(messages: list, model: str, stream: bool = True) -> dict | str:
                 else:
                     data = json.loads(resp.read().decode("utf-8"))
                     full_response = data.get("message", {}).get("content", "")
-                
-                return full_response # Succès
+
+            return full_response  # succès, on sort
 
         except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < max_retries - 1:
-                wait = retry_delay * (2 ** attempt)
-                print(f"\n⚠️ Rate limit (429). Tentative {attempt+1}/{max_retries} après {wait}s...")
-                time.sleep(wait)
-                continue
-            raise ConnectionError(f"Erreur HTTP {e.code} lors de l'appel à Ollama: {e.reason}")
-        
+            if e.code == 429:
+                if attempt < MAX_RETRIES:
+                    wait = RETRY_DELAY * attempt
+                    print(f"\n⏳ Ollama surchargé (429) — retry {attempt}/{MAX_RETRIES} dans {wait}s...", flush=True)
+                    time.sleep(wait)
+                    continue
+                else:
+                    raise ConnectionError(
+                        f"Ollama répond 429 (Too Many Requests) après {MAX_RETRIES} tentatives.\n"
+                        f"Ollama est surchargé — attends quelques secondes et relance."
+                    )
+            else:
+                raise ConnectionError(
+                    f"Erreur HTTP {e.code} depuis Ollama sur {OLLAMA_URL}\n"
+                    f"Erreur: {e}"
+                )
+
         except urllib.error.URLError as e:
-            if attempt < max_retries - 1:
-                print(f"\n⚠️ Erreur réseau ({e.reason}). Tentative {attempt+1}/{max_retries}...")
-                time.sleep(retry_delay)
-                continue
             raise ConnectionError(
                 f"Impossible de contacter Ollama sur {OLLAMA_URL}\n"
                 f"Vérifie que Ollama tourne : ollama serve\n"
                 f"Erreur: {e}"
             )
 
+    return full_response
+
 
 def _parse_json_response(raw: str) -> dict:
-    """Extrait et parse le JSON depuis la réponse brute du modèle.
-    Gère le thinking mode de Qwen3 (<think>...</think>).
-    """
-    import re
+    """Extrait et parse le JSON depuis la réponse brute du modèle."""
     raw = raw.strip()
-
-    if not raw:
-        return {"error": "Réponse vide du modèle", "raw": ""}
-
-    # Supprime le bloc <think>...</think> de Qwen3
-    if "<think>" in raw:
-        think_end = raw.rfind("</think>")
-        if think_end != -1:
-            raw = raw[think_end + len("</think>"):].strip()
 
     # Cas 1 : JSON pur
     try:
@@ -103,29 +100,28 @@ def _parse_json_response(raw: str) -> dict:
         pass
 
     # Cas 2 : JSON dans un bloc markdown ```json ... ```
-    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
-    if match:
+    if "```" in raw:
+        start = raw.find("```")
+        end = raw.rfind("```")
+        if start != end:
+            block = raw[start:end].strip()
+            block = block.lstrip("`").lstrip("json").strip()
+            try:
+                return json.loads(block)
+            except json.JSONDecodeError:
+                pass
+
+    # Cas 3 : Cherche un { ... } dans le texte
+    brace_start = raw.find("{")
+    brace_end = raw.rfind("}")
+    if brace_start != -1 and brace_end != -1:
+        candidate = raw[brace_start:brace_end + 1]
         try:
-            return json.loads(match.group(1))
+            return json.loads(candidate)
         except json.JSONDecodeError:
             pass
 
-    # Cas 3 : Cherche le premier { ... } valide (compte les accolades)
-    brace_start = raw.find("{")
-    if brace_start != -1:
-        depth = 0
-        for i, ch in enumerate(raw[brace_start:], brace_start):
-            if ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        return json.loads(raw[brace_start:i + 1])
-                    except json.JSONDecodeError:
-                        break
-
-    return {"error": "Impossible de parser la réponse JSON", "raw": raw[:800]}
+    return {"error": "Impossible de parser la réponse JSON", "raw": raw[:500]}
 
 
 def get_design_direction(messages: list, model: str = DEFAULT_MODEL) -> dict:

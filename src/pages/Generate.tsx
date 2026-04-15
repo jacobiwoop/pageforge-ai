@@ -1,24 +1,78 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link2, FileText, Zap, ArrowRight, Loader2, Terminal as TerminalIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  Link2, FileText, Zap, ArrowRight, Loader2, Terminal as TerminalIcon, 
+  CheckCircle2, AlertCircle, Layout, Code2, Eye, FileJson, FileCode, Search,
+  ChevronRight, Download, Maximize2, History, MessageSquare, Send, Sparkles, FolderTree, ArrowLeft, ChevronDown, ChevronUp
+} from 'lucide-react';
 import { cn } from '../lib/utils';
 
+// Types
 interface LogEntry {
   message: string;
   time: string;
   type: 'info' | 'success' | 'error';
 }
 
+interface SessionFile {
+  name: string;
+  size: number;
+  url: string;
+  ext: string;
+}
+
+interface Stage {
+  id: string;
+  name: string;
+  status: 'pending' | 'active' | 'completed' | 'error';
+}
+
+// Simple Syntax Highlighter
+const highlightCode = (code: string, ext: string) => {
+  if (!code) return "";
+  if (ext === 'json') {
+    return code
+      .replace(/(".*?")(\s*:)/g, '<span class="text-blue-400">$1</span>$2')
+      .replace(/(:\s*)(".*?")/g, '$1<span class="text-emerald-400">$2</span>')
+      .replace(/\b(true|false|null)\b/g, '<span class="text-amber-400">$1</span>')
+      .replace(/\b(\d+)\b/g, '<span class="text-purple-400">$1</span>');
+  }
+  if (ext === 'html') {
+    return code
+      .replace(/(&lt;[a-z0-9]+)/gi, '<span class="text-rose-400">$1</span>')
+      .replace(/(&lt;\/[a-z0-9]+&gt;)/gi, '<span class="text-rose-400">$1</span>')
+      .replace(/([a-z-]+)(=)/gi, '<span class="text-blue-300">$1</span>$2')
+      .replace(/(".*?")/g, '<span class="text-emerald-400">$1</span>');
+  }
+  return code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+};
+
 export default function Generate() {
-  const [mode, setMode] = useState<'link' | 'text'>('link');
+  const [viewMode, setViewMode] = useState<'form' | 'split'>('form');
+  const [formMode, setFormMode] = useState<'link' | 'text'>('link');
   const [url, setUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [showDetails, setShowDetails] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const terminalEndRef = useRef<HTMLDivElement>(null);
-  const logCountRef = useRef<number>(0);
+  const [sessionFiles, setSessionFiles] = useState<SessionFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<SessionFile | null>(null);
+  const [fileContent, setFileContent] = useState<string>('');
+  const [previewTab, setPreviewTab] = useState<'preview' | 'code'>('preview');
+  
+  // Pipeline Stages
+  const [stages, setStages] = useState<Stage[]>([
+    { id: 'scrape', name: 'Scraping target data', status: 'pending' },
+    { id: 'synthesis', name: 'Synthesizing product info', status: 'pending' },
+    { id: 'design', name: 'Generating design system', status: 'pending' },
+    { id: 'strategy', name: 'Defining marketing strategy', status: 'pending' },
+    { id: 'plan', name: 'Planning page structure', status: 'pending' },
+    { id: 'content', name: 'Generating module content', status: 'pending' },
+    { id: 'code', name: 'Fusing style & code', status: 'pending' },
+  ]);
 
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const logCountRef = useRef<number>(0);
   const API_BASE = "http://localhost:8000";
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -26,10 +80,13 @@ export default function Generate() {
     if (isGenerating) return;
 
     setIsGenerating(true);
-    setLogs([{ message: "INITIALIZATION_NEURAL_PIPE...", time: new Date().toLocaleTimeString(), type: 'info' }]);
+    setLogs([{ message: "NEURAL_LINK_ESTABLISHED", time: new Date().toLocaleTimeString(), type: 'info' }]);
     logCountRef.current = 0;
-    setResultUrl(null);
     setProgress(5);
+    setViewMode('split');
+    
+    // Reset stages
+    setStages(prev => prev.map(s => ({ ...s, status: 'pending' })));
 
     try {
       const response = await fetch(`${API_BASE}/api/generate`, {
@@ -40,226 +97,394 @@ export default function Generate() {
       const data = await response.json();
       setSessionId(data.session_id);
     } catch (err) {
-      setLogs(prev => [...prev, { message: "CONNECTION_FAILURE_TO_CORE_AI", time: new Date().toLocaleTimeString(), type: 'error' }]);
+      setLogs(prev => [...prev, { message: "CORE_FAILURE: API_UNREACHABLE", time: new Date().toLocaleTimeString(), type: 'error' }]);
       setIsGenerating(false);
     }
   };
 
+  const fetchSessionFiles = async (id: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/session/${id}/files`);
+      if (res.ok) {
+        const files = await res.json();
+        setSessionFiles(files);
+        if (!selectedFile && files.length > 0) {
+          const mainFile = files.find((f: SessionFile) => f.name === 'final_page.html') || files[files.length - 1];
+          setSelectedFile(mainFile);
+        }
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  // Logic to update stages based on logs/progress
+  const updateStagesFromLogs = (logList: LogEntry[]) => {
+    const logText = logList.map(l => l.message).join(' ');
+    setStages(current => current.map(stage => {
+      let status = stage.status;
+      
+      const markers: Record<string, { start: string, end: string }> = {
+        scrape: { start: 'RÉCUPÉRATION', end: 'SYNTHÈSE' },
+        synthesis: { start: 'SYNTHÈSE', end: 'DESIGN' },
+        design: { start: 'DESIGN', end: 'STRATÉGIES' },
+        strategy: { start: 'STRATÉGIES', end: 'PLANIFICATION' },
+        plan: { start: 'PLANIFICATION', end: 'RÉDACTION' },
+        content: { start: 'RÉDACTION', end: 'HTML FINAL' },
+        code: { start: 'HTML FINAL', end: 'TERMINÉE' },
+      };
+
+      const m = markers[stage.id];
+      if (logText.includes(m.end)) status = 'completed';
+      else if (logText.includes(m.start)) status = 'active';
+      
+      // Final override
+      if (logText.includes('PAGE TERMINÉE')) status = 'completed';
+      if (logText.includes('ERREUR')) {
+          // Find which one was active and mark it error
+          if (status === 'active') status = 'error';
+      }
+
+      return { ...stage, status };
+    }));
+  };
+
+  useEffect(() => {
+    updateStagesFromLogs(logs);
+  }, [logs]);
+
+  useEffect(() => {
+    if (selectedFile) {
+      fetch(`${API_BASE}${selectedFile.url}`)
+        .then(res => res.text())
+        .then(text => setFileContent(text))
+        .catch(e => console.error(e));
+    }
+  }, [selectedFile]);
+
   useEffect(() => {
     let interval: number | null = null;
-
     if (sessionId && isGenerating) {
       interval = window.setInterval(async () => {
         try {
           const res = await fetch(`${API_BASE}/api/status/${sessionId}`);
-          
-          if (res.status === 404) {
-             setIsGenerating(false);
-             setSessionId(null);
-             if (interval) clearInterval(interval);
-             setLogs(prev => [...prev, { message: "SESSION_EXPIRED_OR_SERVER_RESTART", time: new Date().toLocaleTimeString(), type: 'error' }]);
-             return;
-          }
-
           if (!res.ok) return;
           const data = await res.json();
-          
-          if (data?.logs && Array.isArray(data.logs)) {
+          if (data?.logs) {
             const currentCount = logCountRef.current;
             if (data.logs.length > currentCount) {
               const newLogs = data.logs.slice(currentCount).map((l: string) => ({
                 message: l.split('] ')[1] || l,
                 time: l.match(/\[(.*?)\]/)?.[1] || new Date().toLocaleTimeString(),
-                type: l.includes('ERREUR') || l.includes('❌') ? 'error' : (l.includes('réussie') || l.includes('Succès') || l.includes('✅') || l.includes('✨') ? 'success' : 'info') as 'info' | 'success' | 'error'
+                type: (l.includes('ERREUR') || l.includes('❌')) ? 'error' : (l.includes('réussie') || l.includes('Succès') || l.includes('✅') || l.includes('✨')) ? 'success' : 'info'
               }));
               logCountRef.current = data.logs.length;
               setLogs(prev => [...prev, ...newLogs]);
             }
           }
-          
           if (data?.progress !== undefined) setProgress(data.progress);
-
-          if (data.status === 'completed') {
+          fetchSessionFiles(sessionId);
+          if (data.status === 'completed' || data.status === 'failed') {
             setIsGenerating(false);
-            setSessionId(null);
-            setResultUrl(data.result_url);
-            if (interval) clearInterval(interval);
-          } else if (data.status === 'failed') {
-            setIsGenerating(false);
-            setSessionId(null);
             if (interval) clearInterval(interval);
           }
-        } catch (e) {
-          console.error("Polling error", e);
-        }
+        } catch (e) { console.error(e); }
       }, 1500);
     }
-
     return () => { if (interval) clearInterval(interval); };
   }, [sessionId, isGenerating]);
 
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs, showDetails]);
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      <div>
-        <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter mb-2">GENERATE_UNIT</h1>
-        <p className="text-sm font-mono text-gray-500 uppercase">MULTI_AGENT_ORCHESTRATION_INTERFACE</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white brutalist-border p-8 brutalist-shadow">
-            <div className="flex gap-4 mb-8">
-              <button 
-                onClick={() => setMode('link')}
-                className={cn(
-                  "flex-1 py-4 brutalist-border flex items-center justify-center gap-2 font-bold uppercase transition-all",
-                  mode === 'link' ? "bg-[var(--color-neon)] brutalist-shadow-sm translate-x-[-2px] translate-y-[-2px]" : "bg-gray-50 hover:bg-gray-100"
-                )}
-              >
-                <Link2 className="w-5 h-5" />
-                LINK_INJECT
-              </button>
-              <button 
-                onClick={() => setMode('text')}
-                className={cn(
-                  "flex-1 py-4 brutalist-border flex items-center justify-center gap-2 font-bold uppercase transition-all",
-                  mode === 'text' ? "bg-[var(--color-neon)] brutalist-shadow-sm translate-x-[-2px] translate-y-[-2px]" : "bg-gray-50 hover:bg-gray-100"
-                )}
-              >
-                <FileText className="w-5 h-5" />
-                DESC_INJECT
-              </button>
+  if (viewMode === 'split') {
+    return (
+      <div className="fixed inset-0 top-[80px] md:left-[256px] flex bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
+        
+        {/* PANEL 1: CONVERSATIONAL CHAT */}
+        <div className="w-80 lg:w-[450px] flex flex-col border-r border-zinc-800 bg-zinc-950">
+          <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/30">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-zinc-500" />
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Agent Chat</span>
+            </div>
+            <div className="text-[10px] font-mono bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded flex items-center gap-2">
+              <span className={cn("w-1.5 h-1.5 rounded-full", isGenerating ? "bg-emerald-500 animate-pulse" : "bg-zinc-600")}></span>
+              {isGenerating ? 'PROCESSING' : 'IDLE'}
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            {/* 1. User Message (The Link) */}
+            <div className="flex flex-col items-end gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+               <div className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-lg">
+                  <p className="text-xs font-bold mb-1 opacity-70">Source Flux</p>
+                  <p className="text-sm break-all font-mono">{url}</p>
+               </div>
+               <span className="text-[9px] font-bold text-zinc-600 uppercase px-2">User • Just now</span>
             </div>
 
-            <form onSubmit={handleGenerate} className="space-y-6">
-              {mode === 'link' ? (
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider">SOURCE_URL_INPUT</label>
-                  <div className="relative">
-                    <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input 
-                      type="url" 
-                      required
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      placeholder="https://french.alibaba.com/product-detail/..." 
-                      className="w-full pl-12 pr-4 py-4 brutalist-border bg-[#f4f4f5] font-mono text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-[var(--color-neon)]"
-                    />
+            {/* 2. AI Pipeline Card */}
+            <div className="flex flex-col items-start gap-2 animate-in fade-in slide-in-from-left-4 duration-700 delay-300">
+               <div className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl rounded-tl-none overflow-hidden shadow-2xl">
+                  {/* Card Header */}
+                  <div className="p-4 bg-zinc-800/50 border-b border-zinc-800 flex justify-between items-center text-sm font-bold text-white">
+                     <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                        Generating landing page
+                     </div>
+                     <Zap className="w-3.5 h-3.5 text-zinc-600" />
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider">RAW_DESCRIPTION_FLUX</label>
-                  <textarea 
-                    required
-                    rows={5}
-                    placeholder="Describe the product specifics..." 
-                    className="w-full p-4 brutalist-border bg-[#f4f4f5] font-mono text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-[var(--color-neon)] resize-none"
-                  />
-                </div>
-              )}
 
-              <button 
-                type="submit"
-                disabled={isGenerating}
-                className="w-full py-5 bg-black text-[var(--color-neon)] brutalist-border brutalist-shadow flex items-center justify-center gap-3 font-bold text-lg uppercase hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all disabled:opacity-70"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    PROCESSING_STREAM...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-6 h-6" />
-                    START_ORCHESTRATION
-                    <ArrowRight className="w-6 h-6 ml-2" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
+                  {/* Card Content - Progress Checklist */}
+                  <div className="p-5 space-y-4">
+                     {stages.map((stage, idx) => {
+                        if (stage.status === 'pending' && idx > 0 && stages[idx-1].status !== 'completed') return null;
+                        return (
+                          <div key={stage.id} className="flex items-center gap-3 group animate-in fade-in slide-in-from-left-1">
+                             <div className={cn(
+                                "w-5 h-5 rounded-full flex items-center justify-center transition-all",
+                                stage.status === 'completed' ? "bg-emerald-500/20 text-emerald-500" :
+                                stage.status === 'active' ? "bg-blue-500/20 text-blue-400 animate-pulse" :
+                                stage.status === 'error' ? "bg-red-500/20 text-red-500" : "bg-zinc-800 text-zinc-600"
+                             )}>
+                                {stage.status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> : 
+                                 stage.status === 'active' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                                 stage.status === 'error' ? <AlertCircle className="w-3.5 h-3.5" /> :
+                                 <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                             </div>
+                             <span className={cn(
+                                "text-xs font-medium transition-colors",
+                                stage.status === 'active' ? "text-white" :
+                                stage.status === 'completed' ? "text-zinc-400" : "text-zinc-600"
+                             )}>
+                                {stage.name}
+                             </span>
+                          </div>
+                        );
+                     })}
+                  </div>
 
-          {(isGenerating || logs.length > 0) && (
-            <div className="bg-black text-[#00FF41] brutalist-border brutalist-shadow p-6 font-mono text-sm overflow-hidden h-[400px] flex flex-col">
-              <div className="flex items-center justify-between mb-4 border-b border-[#00FF41]/30 pb-2">
-                <div className="flex items-center gap-2">
-                  <TerminalIcon className="w-4 h-4" />
-                  <span className="uppercase tracking-widest text-xs font-bold">Activity_Flux_V1.0</span>
-                </div>
-                <div className="flex items-center gap-4">
-                   <div className="text-[10px] animate-pulse">● SYSTEM_ONLINE</div>
-                   <div className="text-[10px]">{progress}%</div>
-                </div>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-[#00FF41]/20">
+                  {/* Card Footer - Controls */}
+                  <div className="p-3 bg-zinc-950/50 border-t border-zinc-800/50 flex gap-2">
+                     <button 
+                        onClick={() => setShowDetails(!showDetails)}
+                        className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2"
+                     >
+                        {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        {showDetails ? 'Hide Details' : 'Show Details'}
+                     </button>
+                     {!isGenerating && (
+                       <button className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white [10px] font-bold uppercase tracking-wider rounded-lg transition-all">
+                          Preview Result
+                       </button>
+                     )}
+                  </div>
+               </div>
+               <span className="text-[9px] font-bold text-zinc-600 uppercase px-2">Agent-Cli • Working</span>
+            </div>
+
+            {/* 3. Detailed Logs (Collapsible) */}
+            {showDetails && (
+              <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
                 {logs.map((log, i) => (
-                  <div key={i} className={cn(
-                    "flex gap-3 animate-in fade-in slide-in-from-left-1 duration-200",
-                    log.type === 'error' ? "text-red-500" : log.type === 'success' ? "text-white font-bold" : ""
-                  )}>
-                    <span className="opacity-40 select-none">[{log.time}]</span>
-                    <span className="flex-1 tracking-tight">
-                      {log.type === 'success' && <CheckCircle2 className="inline w-3 h-3 mr-1" />}
-                      {log.type === 'error' && <AlertCircle className="inline w-3 h-3 mr-1" />}
-                      {log.message}
-                    </span>
+                  <div key={i} className="flex gap-3 text-[10px] font-mono leading-relaxed opacity-60 hover:opacity-100 transition-opacity">
+                    <span className="text-zinc-600 shrink-0">[{log.time}]</span>
+                    <span className={cn(
+                      log.type === 'error' ? "text-red-400" : 
+                      log.type === 'success' ? "text-emerald-400" : "text-zinc-400"
+                    )}>{log.message}</span>
                   </div>
                 ))}
-                <div ref={terminalEndRef} />
               </div>
+            )}
+            
+            <div ref={chatEndRef} />
+          </div>
 
-              {resultUrl && (
-                <div className="mt-4 pt-4 border-t border-[#00FF41]/30 animate-in bounce-in">
-                  <a 
-                    href={`${API_BASE}${resultUrl}`} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="flex items-center justify-between bg-[#00FF41] text-black px-4 py-3 font-bold uppercase text-xs hover:bg-white transition-colors"
-                  >
-                    <span>Page_Generation_Complete_View_Result</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                </div>
-              )}
+          <div className="p-4 border-t border-zinc-800 bg-zinc-900/10">
+            <div className="relative group">
+               <input 
+                disabled 
+                placeholder={isGenerating ? "Agent is processing current task..." : "Type a command..."} 
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-4 pr-12 text-sm focus:outline-none opacity-50 cursor-not-allowed shadow-inner"
+               />
+               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500">
+                    <Send className="w-4 h-4" />
+                  </div>
+               </div>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white brutalist-border p-6 border-r-8 border-b-8 border-black">
-            <h3 className="font-bold uppercase mb-4 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-[var(--color-neon)]" />
-              SYSTEM_INTEL
-            </h3>
-            <div className="space-y-4 text-xs font-mono uppercase">
-              <div className="flex justify-between border-b border-gray-100 pb-2">
-                <span className="text-gray-500">Model</span>
-                <span className="font-bold">Qwen_3.5_Cloud</span>
+        {/* PANEL 2: COMPACT FILE EXPLORER */}
+        <div className="w-56 border-r border-zinc-800 bg-zinc-950 flex flex-col">
+          <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+             <div className="flex items-center gap-2">
+                <FolderTree className="w-3.5 h-3.5 text-zinc-500" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">VFS_Explorer</span>
+             </div>
+             <Search className="w-3 h-3 text-zinc-600" />
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+            {sessionFiles.map((file, i) => (
+              <button
+                key={i}
+                onClick={() => setSelectedFile(file)}
+                className={cn(
+                  "w-full text-left p-2 rounded-md text-[11px] font-medium flex items-center gap-2 transition-all mb-0.5 group",
+                  selectedFile?.name === file.name ? "bg-zinc-800 text-white" : "text-zinc-500 hover:bg-zinc-900/80 hover:text-zinc-300"
+                )}
+              >
+                {file.ext === 'json' ? <FileJson className="w-3.5 h-3.5 text-amber-500/50 group-hover:text-amber-500" /> : 
+                 file.url.includes('html') ? <Code2 className="w-3.5 h-3.5 text-rose-500/50 group-hover:text-rose-500" /> :
+                 <FileCode className="w-3.5 h-3.5 text-blue-500/50 group-hover:text-blue-500" />}
+                <span className="truncate">{file.name}</span>
+                {selectedFile?.name === file.name && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-auto shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* PANEL 3: MAIN VIEWER AREA */}
+        <div className="flex-1 flex flex-col bg-zinc-950">
+          <div className="h-14 border-b border-zinc-800 flex items-center justify-between px-6 bg-zinc-950/80 backdrop-blur-md z-10 shadow-sm">
+            <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50">
+              <button 
+                onClick={() => setPreviewTab('preview')}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2",
+                  previewTab === 'preview' ? "bg-zinc-800 text-white shadow-inner border border-zinc-700" : "text-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                <Eye className="w-3 h-3" />
+                Preview
+              </button>
+              <button 
+                onClick={() => setPreviewTab('code')}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2",
+                  previewTab === 'code' ? "bg-zinc-800 text-white shadow-inner border border-zinc-700" : "text-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                <Code2 className="w-3 h-3" />
+                Code
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-4">
+               {!isGenerating && (
+                 <button 
+                    onClick={() => setViewMode('form')}
+                    className="flex items-center gap-2 text-[10px] font-bold uppercase text-zinc-500 hover:text-white transition-all bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800"
+                 >
+                   <ArrowLeft className="w-3 h-3" />
+                   New Deployment
+                 </button>
+               )}
+               <div className="h-4 w-[1px] bg-zinc-800"></div>
+               <div className="text-[11px] font-mono text-zinc-500 flex items-center gap-2">
+                  <span className="opacity-30">CUR_FILE:</span>
+                  <span className="text-zinc-400">{selectedFile?.name || "INIT..."}</span>
+               </div>
+            </div>
+          </div>
+
+          <div className="flex-1 relative">
+            {previewTab === 'preview' && selectedFile?.ext === 'html' ? (
+              <div className="w-full h-full bg-white">
+                <iframe src={`${API_BASE}${selectedFile.url}`} className="w-full h-full border-none" />
               </div>
-              <div className="flex justify-between border-b border-gray-100 pb-2">
-                <span className="text-gray-500">Session_Lock</span>
-                <span className="font-bold">Multi_ISO_Active</span>
+            ) : (
+              <div className="w-full h-full overflow-auto p-8 font-mono text-[13px] bg-zinc-950 text-zinc-300 selection:bg-zinc-700 selection:text-white">
+                <pre 
+                  className="leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: highlightCode(fileContent, selectedFile?.ext || '') }} 
+                />
               </div>
-              <div className="flex justify-between border-b border-gray-100 pb-2">
-                <span className="text-gray-500">Latency</span>
-                <span className="font-bold">~24ms</span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Initial Form Layout
+  return (
+    <div className="max-w-4xl mx-auto space-y-12 py-10">
+      <div className="text-center space-y-4">
+        <h1 className="text-5xl font-black tracking-tighter uppercase text-black border-4 border-black inline-block px-4 py-2 italic bg-[var(--color-neon)] shadow-[8px_8px_0px_#000]">GENERATE_UNIT</h1>
+        <p className="text-xs font-mono text-zinc-500 uppercase tracking-[0.3em] font-bold animate-pulse">Advanced Neural Orchestration Core V2.0</p>
+      </div>
+
+      <div className="bg-white brutalist-border-thick p-12 shadow-[12px_12px_0px_#000]">
+        <div className="flex gap-6 mb-10">
+          <button 
+            onClick={() => setFormMode('link')}
+            className={cn(
+              "flex-1 py-6 brutalist-border flex items-center justify-center gap-4 font-black uppercase transition-all text-sm tracking-widest",
+              formMode === 'link' ? "bg-[var(--color-neon)] shadow-[4px_4px_0px_#000] -translate-x-1 -translate-y-1" : "bg-gray-50 hover:bg-gray-100"
+            )}
+          >
+            <Link2 className="w-6 h-6" />
+            Inject Product Link
+          </button>
+          <button 
+            onClick={() => setFormMode('text')}
+            className={cn(
+              "flex-1 py-6 brutalist-border flex items-center justify-center gap-4 font-black uppercase transition-all text-sm tracking-widest",
+              formMode === 'text' ? "bg-[var(--color-neon)] shadow-[4px_4px_0px_#000] -translate-x-1 -translate-y-1" : "bg-gray-50 hover:bg-gray-100"
+            )}
+          >
+            <FileText className="w-6 h-6" />
+            Direct Description
+          </button>
+        </div>
+
+        <form onSubmit={handleGenerate} className="space-y-10">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+               <label className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-400">Vectored_Input_Source</label>
+               <span className="text-[9px] font-mono text-zinc-300">PROTO_VERSION: 1.0.4</span>
+            </div>
+            <div className="relative group">
+              <input 
+                required
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder={formMode === 'link' ? "https://www.alibaba.com/..." : "Describe the target..."}
+                className="w-full bg-[#f4f4f5] brutalist-border-thick p-6 font-mono text-sm focus:outline-none focus:bg-white focus:ring-8 focus:ring-[var(--color-neon)]/10 transition-all placeholder:opacity-30"
+              />
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">
+                <Zap className="w-5 h-5" />
               </div>
             </div>
           </div>
 
-          <div className="bg-[var(--color-neon)] brutalist-border p-6 brutalist-shadow">
-            <h3 className="font-bold uppercase mb-2">QUICK_TIP</h3>
-            <p className="text-xs font-mono leading-relaxed">
-              Use high-quality product links with detailed specifications to get the best AI copywriting results.
-            </p>
-          </div>
-        </div>
+          <button 
+            type="submit"
+            disabled={isGenerating}
+            className="w-full py-8 bg-black text-[var(--color-neon)] brutalist-border-thick shadow-[8px_8px_0px_#00FF66] flex items-center justify-center gap-6 font-black text-2xl uppercase hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50 group"
+          >
+            {isGenerating ? <Loader2 className="w-8 h-8 animate-spin" /> : <Zap className="w-8 h-8 group-hover:scale-125 transition-transform" />}
+            {isGenerating ? "ORCHESTRATING..." : "DEPLOY_NEURAL_AGENTS"}
+          </button>
+        </form>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-6 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+         <div className="p-4 border-2 border-dashed border-zinc-300 rounded-xl flex items-center gap-4">
+            <div className="w-10 h-10 rounded bg-zinc-100 flex items-center justify-center font-bold">01</div>
+            <div className="text-[10px] font-mono uppercase">Multi-Agent<br/>Sync</div>
+         </div>
+         <div className="p-4 border-2 border-dashed border-zinc-300 rounded-xl flex items-center gap-4">
+            <div className="w-10 h-10 rounded bg-zinc-100 flex items-center justify-center font-bold">02</div>
+            <div className="text-[10px] font-mono uppercase">Real-time<br/>VFS Stream</div>
+         </div>
+         <div className="p-4 border-2 border-dashed border-zinc-300 rounded-xl flex items-center gap-4">
+            <div className="w-10 h-10 rounded bg-zinc-100 flex items-center justify-center font-bold">03</div>
+            <div className="text-[10px] font-mono uppercase">Dynamic<br/>UI Forge</div>
+         </div>
       </div>
     </div>
   );

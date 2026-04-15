@@ -13,7 +13,15 @@ def generate_html(spec_path: str, product_query: str, model: str, content_data: 
     except Exception as e:
         return f"Erreur lors de la lecture de la spec : {str(e)}"
 
-    # ... (prompt preparation) ...
+    # 2. Préparer le bloc de contenu rédactionnel
+    content_instruction = ""
+    if content_data:
+        content_instruction = f"""
+CONTENU RÉDACTIONNEL (MARKETING) :
+{json.dumps(content_data, indent=2, ensure_ascii=False)}
+"""
+
+    # 3. Préparer le prompt final
     full_prompt = f"""RÈGLES DE DESIGN (MASTER SPECIFICATION) :
 {spec_content}
 

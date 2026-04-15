@@ -95,6 +95,26 @@ async def get_status(session_id: str):
         result_url=session.get("result_url", None),
     )
 
+@app.get("/api/session/{session_id}/files")
+async def list_session_files(session_id: str):
+    """List all files in a specific session directory."""
+    path = os.path.join(SESSION_DIR, session_id)
+    if not os.path.exists(path):
+        return [] # Return empty list if folder not yet created
+    
+    files = []
+    for filename in os.listdir(path):
+        file_path = os.path.join(path, filename)
+        if os.path.isfile(file_path):
+            stats = os.stat(file_path)
+            files.append({
+                "name": filename,
+                "size": stats.st_size,
+                "url": f"/sessions/{session_id}/{filename}",
+                "ext": filename.split('.')[-1] if '.' in filename else ''
+            })
+    return sorted(files, key=lambda x: x["name"])
+
 @app.get("/api/products")
 async def list_products():
     """List all generated products in the exports directory."""

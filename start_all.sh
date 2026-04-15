@@ -11,13 +11,18 @@ cleanup() {
     echo -e "\n🛑 Arrêt de tous les services..."
     # On tue par port pour être sûr de tout nettoyer
     fuser -k 3000/tcp 3005/tcp 8000/tcp 2>/dev/null || true
+    # On nettoie les processus chrome orphelins (Puppeteer)
+    pkill -f chrome || true
+    pkill -f chromium || true
     exit
 }
 trap cleanup SIGINT SIGTERM
 
 # 1. Nettoyage initial
-echo "🧹 Nettoyage des ports (3000, 3005, 8000)..."
+echo "🧹 Nettoyage des ports (3000, 3005, 8000) et des processus Google Chrome..."
 fuser -k 3000/tcp 3005/tcp 8000/tcp 2>/dev/null || true
+pkill -f chrome || true
+pkill -f chromium || true
 sleep 1
 
 # 2. Lancement du Scraper (Port 3005)
