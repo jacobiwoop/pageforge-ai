@@ -517,7 +517,7 @@ export default function Generate() {
       </div>
 
       <div className="text-center space-y-4">
-        <h1 className="text-5xl font-black tracking-tighter uppercase text-white border-4 border-white inline-block px-4 py-2 italic bg-zinc-950 shadow-[8px_8px_0px_#10B981]">GENERATE_UNIT</h1>
+        <h1 className="text-5xl font-black tracking-tighter uppercase text-white border-4 border-white inline-block px-4 py-2 italic bg-zinc-950 shadow-[8px_8px_0px_#10B981]">PAGEFORGE</h1>
         <p className="text-xs font-mono text-zinc-500 uppercase tracking-[0.3em] font-bold animate-pulse">Advanced Neural Orchestration Core V2.0</p>
       </div>
 

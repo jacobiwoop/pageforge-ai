@@ -24,7 +24,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-[#f4f4f5] border-r-2 border-black flex flex-col shrink-0 z-10 hidden md:flex h-screen sticky top-0">
         <div className="p-6 border-b-2 border-black bg-white">
-          <h1 className="text-2xl font-bold tracking-tighter uppercase">RAW_LOGIC_AI</h1>
+          <h1 className="text-2xl font-bold tracking-tighter uppercase">PAGEFORGE</h1>
         </div>
         
         <div className="p-4 flex-1">
@@ -72,7 +72,7 @@ export default function Layout({ children }: LayoutProps) {
         {/* Header */}
         <header className="h-20 border-b-2 border-black bg-white flex items-center justify-between px-6 sticky top-0 z-20">
           <div className="flex items-center gap-8 md:hidden">
-            <h1 className="text-xl font-bold tracking-tighter uppercase">RAW_LOGIC_AI</h1>
+            <h1 className="text-xl font-bold tracking-tighter uppercase">PAGEFORGE</h1>
           </div>
           
           <nav className="hidden md:flex items-center gap-8">
@@ -127,7 +127,7 @@ export default function Layout({ children }: LayoutProps) {
         
         {/* Footer Status Bar */}
         <footer className="h-10 border-t-2 border-black bg-white flex items-center justify-between px-6 text-[10px] font-mono uppercase text-gray-500 shrink-0">
-          <div>© 2024 RAW_LOGIC_AI // SYSTEM_UPTIME: 99.98% // SESSION: {user?.id} // STATUS: AUTHENTICATED</div>
+          <div>© 2024 PAGEFORGE // SYSTEM_UPTIME: 99.98% // SESSION: {user?.id} // STATUS: AUTHENTICATED</div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-[var(--color-neon)]"></div>
