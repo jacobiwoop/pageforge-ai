@@ -4,13 +4,12 @@ import json
 import logging
 import asyncio
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
-from datetime import datetime
-
-# Import orchestrator logic
+from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Depends
+from sqlalchemy.orm import Session
+from database import get_db, init_db
+import models
+import auth
 from orchestrator import run_full_pipeline
 
 # Setup logging
@@ -40,6 +39,9 @@ SESSION_DIR = "sessions"
 os.makedirs(EXPORT_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
 
+# Initialize database
+init_db()
+
 # Mount static files
 app.mount("/exports", StaticFiles(directory=EXPORT_DIR), name="exports")
 app.mount("/sessions", StaticFiles(directory=SESSION_DIR), name="sessions")
@@ -58,10 +60,99 @@ class GenerationStatus(BaseModel):
     logs: List[str]
     result_url: Optional[str] = None
 
-# API Routes
-@app.get("/api/health")
-async def health_check():
-    return {"status": "online", "system": "Raw Logic AI Orchestrator"}
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    full_name: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class OrderCreate(BaseModel):
+    product_name: str
+    amount: float
+
+# ── AUTH ROUTES ──────────────────────────────────────────────────────────────
+
+@app.post("/api/auth/register")
+async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.email == user_data.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed_pwd = auth.get_password_hash(user_data.password)
+    new_user = models.User(
+        email=user_data.email,
+        hashed_password=hashed_pwd,
+        full_name=user_data.full_name
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"status": "success", "message": "User created"}
+
+@app.post("/api/auth/login")
+async def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == user_data.email).first()
+    if not user or not auth.verify_password(user_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    access_token = auth.create_access_token(data={"sub": user.email})
+    
+    from fastapi.responses import JSONResponse
+    response = JSONResponse(content={"status": "success", "user": {"email": user.email, "name": user.full_name}})
+    response.set_cookie(
+        key="access_token", 
+        value=access_token, 
+        httponly=True, 
+        max_age=auth.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax",
+        secure=False # Set to True in production
+    )
+    return response
+
+@app.get("/api/auth/me")
+async def get_me(current_user: models.User = Depends(auth.get_current_user)):
+    return {"email": current_user.email, "name": current_user.full_name}
+
+@app.post("/api/auth/logout")
+async def logout():
+    from fastapi.responses import JSONResponse
+    response = JSONResponse(content={"status": "success"})
+    response.delete_cookie("access_token")
+    return response
+
+# ── ORDER ROUTES ─────────────────────────────────────────────────────────────
+
+@app.post("/api/orders/create")
+async def create_order(
+    order_data: OrderCreate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Logic to initialize FedaPay would go here
+    # For now, we just save the order in 'pending' state
+    new_order = models.Order(
+        user_id=current_user.id,
+        product_name=order_data.product_name,
+        amount=order_data.amount,
+        status="pending"
+    )
+    db.add(new_order)
+    db.commit()
+    db.refresh(new_order)
+    
+    # Mock FedaPay URL for demonstration
+    checkout_url = f"https://checkout.fedapay.com/direct-pay/{uuid.uuid4()}"
+    
+    return {
+        "status": "success", 
+        "order_id": new_order.id, 
+        "checkout_url": checkout_url
+    }
+
+# ── GENERATION ROUTES ────────────────────────────────────────────────────────
 
 @app.post("/api/generate")
 async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks):

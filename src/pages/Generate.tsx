@@ -59,6 +59,13 @@ export default function Generate() {
   const [selectedFile, setSelectedFile] = useState<SessionFile | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [previewTab, setPreviewTab] = useState<'preview' | 'code'>('preview');
+
+  // Auth States
+  const [user, setUser] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authData, setAuthData] = useState({ email: '', password: '', full_name: '' });
+  const [authError, setAuthError] = useState('');
   
   // Pipeline Stages
   const [stages, setStages] = useState<Stage[]>([
@@ -74,6 +81,59 @@ export default function Generate() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const logCountRef = useRef<number>(0);
   const API_BASE = "http://localhost:8000";
+
+  const checkAuth = async () => {
+    setIsCheckingAuth(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/me`);
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      } else {
+        setUser(null);
+      }
+    } catch (e) {
+      setUser(null);
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (authMode === 'login') {
+          setUser(data.user);
+        } else {
+          setAuthMode('login');
+          setAuthError('Account created! Please login.');
+        }
+      } else {
+        setAuthError(data.detail || 'Authentication failed');
+      }
+    } catch (e) {
+      setAuthError('Connection error');
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
+    setUser(null);
+    setViewMode('form');
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +256,92 @@ export default function Generate() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs, showDetails]);
 
+  if (isCheckingAuth) {
+    return (
+      <div className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center gap-4 text-zinc-500">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
+        <span className="text-[10px] font-mono tracking-widest uppercase">Initializing neural auth...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-zinc-900 border-4 border-black shadow-[12px_12px_0px_#000] p-10 space-y-8 animate-in fade-in zoom-in duration-500">
+           <div className="text-center space-y-2">
+             <div className="inline-block p-3 bg-zinc-800 rounded-2xl mb-4">
+                <Sparkles className="w-8 h-8 text-emerald-400" />
+             </div>
+             <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Raw_Logic_AI</h1>
+             <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Identify to proceed</p>
+           </div>
+
+           <form onSubmit={handleAuthSubmit} className="space-y-6">
+              {authMode === 'register' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Full Name</label>
+                  <input 
+                    required
+                    value={authData.full_name}
+                    onChange={(e) => setAuthData({...authData, full_name: e.target.value})}
+                    type="text" 
+                    placeholder="John Doe" 
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all"
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Neural ID (Email)</label>
+                <input 
+                  required
+                  value={authData.email}
+                  onChange={(e) => setAuthData({...authData, email: e.target.value})}
+                  type="email" 
+                  placeholder="name@nexus.com" 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Access Protocol (Password)</label>
+                <input 
+                  required
+                  value={authData.password}
+                  onChange={(e) => setAuthData({...authData, password: e.target.value})}
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all"
+                />
+              </div>
+
+              {authError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] rounded-lg text-center flex items-center justify-center gap-2">
+                   <AlertCircle className="w-4 h-4" />
+                   {authError}
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-5 rounded-2xl uppercase text-sm tracking-widest transition-all shadow-[0_4px_20px_rgba(16,185,129,0.2)] active:scale-95"
+              >
+                {authMode === 'login' ? 'Infiltrate System (Login)' : 'Initialize Core (Register)'}
+              </button>
+           </form>
+
+           <div className="text-center pt-4">
+              <button 
+                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                className="text-[11px] font-bold text-zinc-600 hover:text-white uppercase transition-colors"
+              >
+                {authMode === 'login' ? "Don't have an ID? Register" : "Already have an ID? Login"}
+              </button>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
   if (viewMode === 'split') {
     return (
       <div className="fixed inset-0 top-[80px] md:left-[256px] flex bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
@@ -207,9 +353,11 @@ export default function Generate() {
               <MessageSquare className="w-4 h-4 text-zinc-500" />
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Agent Chat</span>
             </div>
-            <div className="text-[10px] font-mono bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded flex items-center gap-2">
-              <span className={cn("w-1.5 h-1.5 rounded-full", isGenerating ? "bg-emerald-500 animate-pulse" : "bg-zinc-600")}></span>
-              {isGenerating ? 'PROCESSING' : 'IDLE'}
+            <div className="flex items-center gap-4">
+               <div className="text-[10px] font-mono bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded flex items-center gap-2">
+                 <span className={cn("w-1.5 h-1.5 rounded-full", isGenerating ? "bg-emerald-500 animate-pulse" : "bg-zinc-600")}></span>
+                 {isGenerating ? 'PROCESSING' : 'IDLE'}
+               </div>
             </div>
           </div>
           
@@ -220,7 +368,7 @@ export default function Generate() {
                   <p className="text-xs font-bold mb-1 opacity-70">Source Flux</p>
                   <p className="text-sm break-all font-mono">{url}</p>
                </div>
-               <span className="text-[9px] font-bold text-zinc-600 uppercase px-2">User • Just now</span>
+               <span className="text-[9px] font-bold text-zinc-600 uppercase px-2">{user.name} • Just now</span>
             </div>
 
             {/* 2. AI Pipeline Card */}
@@ -412,18 +560,36 @@ export default function Generate() {
   // Initial Form Layout
   return (
     <div className="max-w-4xl mx-auto space-y-12 py-10">
+      <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-4 rounded-3xl">
+         <div className="flex items-center gap-4 px-4">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center font-black text-black">
+               {user.name.charAt(0)}
+            </div>
+            <div>
+               <p className="text-[10px] font-black text-zinc-500 uppercase">Authenticated User</p>
+               <p className="text-sm font-bold text-white tracking-tight">{user.name}</p>
+            </div>
+         </div>
+         <button 
+          onClick={handleLogout}
+          className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+         >
+           Identity_Purge (Logout)
+         </button>
+      </div>
+
       <div className="text-center space-y-4">
-        <h1 className="text-5xl font-black tracking-tighter uppercase text-black border-4 border-black inline-block px-4 py-2 italic bg-[var(--color-neon)] shadow-[8px_8px_0px_#000]">GENERATE_UNIT</h1>
+        <h1 className="text-5xl font-black tracking-tighter uppercase text-white border-4 border-white inline-block px-4 py-2 italic bg-zinc-950 shadow-[8px_8px_0px_#10B981]">GENERATE_UNIT</h1>
         <p className="text-xs font-mono text-zinc-500 uppercase tracking-[0.3em] font-bold animate-pulse">Advanced Neural Orchestration Core V2.0</p>
       </div>
 
-      <div className="bg-white brutalist-border-thick p-12 shadow-[12px_12px_0px_#000]">
+      <div className="bg-zinc-900 border-4 border-zinc-800 p-12 shadow-[12px_12px_0px_#000] rounded-3xl">
         <div className="flex gap-6 mb-10">
           <button 
             onClick={() => setFormMode('link')}
             className={cn(
-              "flex-1 py-6 brutalist-border flex items-center justify-center gap-4 font-black uppercase transition-all text-sm tracking-widest",
-              formMode === 'link' ? "bg-[var(--color-neon)] shadow-[4px_4px_0px_#000] -translate-x-1 -translate-y-1" : "bg-gray-50 hover:bg-gray-100"
+              "flex-1 py-8 border-2 border-zinc-800 rounded-3xl flex items-center justify-center gap-4 font-black uppercase transition-all text-sm tracking-widest",
+              formMode === 'link' ? "bg-emerald-600 text-white border-emerald-500 shadow-[0_10px_30px_rgba(16,185,129,0.3)] -translate-y-1" : "bg-zinc-950 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
             )}
           >
             <Link2 className="w-6 h-6" />
@@ -432,8 +598,8 @@ export default function Generate() {
           <button 
             onClick={() => setFormMode('text')}
             className={cn(
-              "flex-1 py-6 brutalist-border flex items-center justify-center gap-4 font-black uppercase transition-all text-sm tracking-widest",
-              formMode === 'text' ? "bg-[var(--color-neon)] shadow-[4px_4px_0px_#000] -translate-x-1 -translate-y-1" : "bg-gray-50 hover:bg-gray-100"
+              "flex-1 py-8 border-2 border-zinc-800 rounded-3xl flex items-center justify-center gap-4 font-black uppercase transition-all text-sm tracking-widest",
+              formMode === 'text' ? "bg-emerald-600 text-white border-emerald-500 shadow-[0_10px_30px_rgba(16,185,129,0.3)] -translate-y-1" : "bg-zinc-950 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
             )}
           >
             <FileText className="w-6 h-6" />
@@ -453,7 +619,7 @@ export default function Generate() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder={formMode === 'link' ? "https://www.alibaba.com/..." : "Describe the target..."}
-                className="w-full bg-[#f4f4f5] brutalist-border-thick p-6 font-mono text-sm focus:outline-none focus:bg-white focus:ring-8 focus:ring-[var(--color-neon)]/10 transition-all placeholder:opacity-30"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-6 font-mono text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:opacity-30"
               />
               <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">
                 <Zap className="w-5 h-5" />
@@ -464,7 +630,7 @@ export default function Generate() {
           <button 
             type="submit"
             disabled={isGenerating}
-            className="w-full py-8 bg-black text-[var(--color-neon)] brutalist-border-thick shadow-[8px_8px_0px_#00FF66] flex items-center justify-center gap-6 font-black text-2xl uppercase hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50 group"
+            className="w-full py-8 bg-emerald-600 text-white rounded-3xl shadow-[0_15px_40px_rgba(16,185,129,0.2)] flex items-center justify-center gap-6 font-black text-2xl uppercase hover:bg-emerald-500 hover:-translate-y-1 transition-all disabled:opacity-50 group border border-emerald-400/30"
           >
             {isGenerating ? <Loader2 className="w-8 h-8 animate-spin" /> : <Zap className="w-8 h-8 group-hover:scale-125 transition-transform" />}
             {isGenerating ? "ORCHESTRATING..." : "DEPLOY_NEURAL_AGENTS"}
@@ -472,18 +638,18 @@ export default function Generate() {
         </form>
       </div>
       
-      <div className="grid grid-cols-3 gap-6 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-         <div className="p-4 border-2 border-dashed border-zinc-300 rounded-xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-zinc-100 flex items-center justify-center font-bold">01</div>
-            <div className="text-[10px] font-mono uppercase">Multi-Agent<br/>Sync</div>
+      <div className="grid grid-cols-3 gap-6 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
+         <div className="p-4 border-2 border-dashed border-zinc-800 rounded-3xl flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400">01</div>
+            <div className="text-[10px] font-mono uppercase text-zinc-500">Multi-Agent<br/>Sync</div>
          </div>
-         <div className="p-4 border-2 border-dashed border-zinc-300 rounded-xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-zinc-100 flex items-center justify-center font-bold">02</div>
-            <div className="text-[10px] font-mono uppercase">Real-time<br/>VFS Stream</div>
+         <div className="p-4 border-2 border-dashed border-zinc-800 rounded-3xl flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400">02</div>
+            <div className="text-[10px] font-mono uppercase text-zinc-500">Real-time<br/>VFS Stream</div>
          </div>
-         <div className="p-4 border-2 border-dashed border-zinc-300 rounded-xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-zinc-100 flex items-center justify-center font-bold">03</div>
-            <div className="text-[10px] font-mono uppercase">Dynamic<br/>UI Forge</div>
+         <div className="p-4 border-2 border-dashed border-zinc-800 rounded-3xl flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-400">03</div>
+            <div className="text-[10px] font-mono uppercase text-zinc-500">Dynamic<br/>UI Forge</div>
          </div>
       </div>
     </div>

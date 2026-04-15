@@ -22,6 +22,8 @@ RÈGLES :
 - Sois technique et précis (utilise des valeurs CSS exactes).
 - Incorpore les "Notes Stack" fournies par le RAG.
 - SÉCURITÉ : Ne jamais appliquer `pointer-events: none` sur la balise `body` ou des conteneurs globaux. Utilise-le uniquement sur des overlays spécifiques.
+- CONVERSION : Privilégie les boutons "Commander" ou "Checkout" directs. Évite les flux complexes de panier.
+- PAIEMENT : Inclue des spécifications pour l'intégration de FedaPay (boutons de paiement, formulaires de règlement direct).
 - Le document doit être prêt à être utilisé comme System Prompt pour une autre IA.
 - Ne fais pas de blabla au début ou à la fin. Uniquement le Markdown.
 """

@@ -35,6 +35,8 @@ Génère une page HTML unique, complète et professionnelle pour ce produit.
 - Intègre les polices Google Fonts mentionnées dans la spec.
 - Respecte scrupuleusement les couleurs, les arrondis (radius) et les animations de la spec.
 - SÉCURITÉ : Ne jamais appliquer `pointer-events: none` sur la balise `body` ou tout conteneur englobant. Tous les éléments interactifs (boutons, inputs) DOIVENT être cliquables.
+- CONVERSION : Ne génère JAMAIS de bouton "Ajouter au panier". Utilise uniquement des boutons "Commander" ou "Acheter maintenant".
+- PAIEMENT : Intègre un formulaire ou un script FedaPay pour le paiement direct. Utilise le endpoint local `/api/orders/create` pour enregistrer la commande avant le paiement.
 - Implémente tous les modules listés dans le contenu rédactionnel (Hero, Benefits, etc.).
 - Le code doit être dans un seul bloc de code HTML.
 """
