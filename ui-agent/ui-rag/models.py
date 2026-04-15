@@ -28,3 +28,14 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     owner = relationship("User", back_populates="orders")
+
+class GenerationSession(Base):
+    __tablename__ = "generation_sessions"
+    
+    id = Column(String, primary_key=True, index=True)
+    url = Column(String)
+    status = Column(String, default="starting")
+    progress = Column(Integer, default=0)
+    result_url = Column(String, nullable=True)
+    logs = Column(String, default="[]")
+    created_at = Column(DateTime, default=datetime.utcnow)

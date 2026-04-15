@@ -37,7 +37,11 @@ echo "   ✅ Scraper lancé en arrière-plan."
 echo "⚙️ [2/3] Lancement du Backend (FastAPI)..."
 (
     cd "$PROJECT_ROOT/ui-agent/ui-rag"
-    python3 app.py > "$PROJECT_ROOT/backend.log" 2>&1
+    if [ -f ".venv/bin/python" ]; then
+        .venv/bin/python app.py > "$PROJECT_ROOT/backend.log" 2>&1
+    else
+        python3 app.py > "$PROJECT_ROOT/backend.log" 2>&1
+    fi
 ) &
 echo "   ✅ Backend lancé en arrière-plan."
 

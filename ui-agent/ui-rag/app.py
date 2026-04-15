@@ -3,6 +3,7 @@ import uuid
 import json
 import logging
 import asyncio
+from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Depends
@@ -45,9 +46,6 @@ init_db()
 # Mount static files
 app.mount("/exports", StaticFiles(directory=EXPORT_DIR), name="exports")
 app.mount("/sessions", StaticFiles(directory=SESSION_DIR), name="sessions")
-
-# Active sessions memory (for real-time updates)
-active_sessions = {}
 
 class GenerationRequest(BaseModel):
     url: str
@@ -155,17 +153,20 @@ async def create_order(
 # ── GENERATION ROUTES ────────────────────────────────────────────────────────
 
 @app.post("/api/generate")
-async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks):
+async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     session_id = str(uuid.uuid4())
     logger.info(f"Starting generation for session {session_id} - URL: {request.url}")
     
-    # Initialize session state
-    active_sessions[session_id] = {
-        "status": "starting",
-        "progress": 0,
-        "logs": ["Initialisation du pipeline multi-agents..."],
-        "url": request.url
-    }
+    # Initialize session state in DB
+    new_session = models.GenerationSession(
+        id=session_id,
+        url=request.url,
+        status="starting",
+        progress=0,
+        logs=json.dumps(["Initialisation du pipeline multi-agents..."])
+    )
+    db.add(new_session)
+    db.commit()
     
     # Launch in background
     background_tasks.add_task(orchestrate_session, session_id, request.url)
@@ -173,17 +174,18 @@ async def start_generation(request: GenerationRequest, background_tasks: Backgro
     return {"session_id": session_id}
 
 @app.get("/api/status/{session_id}")
-async def get_status(session_id: str):
+async def get_status(session_id: str, db: Session = Depends(get_db)):
     """Return current status of a generation session."""
-    if session_id not in active_sessions:
+    session = db.query(models.GenerationSession).filter(models.GenerationSession.id == session_id).first()
+    if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    session = active_sessions[session_id]
+        
     return GenerationStatus(
-        session_id=session_id,
-        status=session.get("status", "unknown"),
-        progress=session.get("progress", 0),
-        logs=session.get("logs", []),
-        result_url=session.get("result_url", None),
+        session_id=session.id,
+        status=session.status,
+        progress=session.progress,
+        logs=json.loads(session.logs),
+        result_url=session.result_url,
     )
 
 @app.get("/api/session/{session_id}/files")
@@ -226,21 +228,41 @@ async def list_products():
                 })
     return sorted(products, key=lambda x: x["date"] + x["time"], reverse=True)
 
+from database import SessionLocal
+
 async def orchestrate_session(session_id: str, url: str):
     """Bridge between FastAPI and the existing orchestrator logic."""
     try:
+        def update_db(status=None, progress=None, add_log=None, result_url=None):
+            db = SessionLocal()
+            try:
+                sess = db.query(models.GenerationSession).filter(models.GenerationSession.id == session_id).first()
+                if sess:
+                    if status is not None:
+                        sess.status = status
+                    if progress is not None:
+                        sess.progress = progress
+                    if result_url is not None:
+                        sess.result_url = result_url
+                    if add_log is not None:
+                        current_logs = json.loads(sess.logs)
+                        current_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {add_log}")
+                        sess.logs = json.dumps(current_logs)
+                    db.commit()
+            finally:
+                db.close()
+
         def log_to_session(msg):
-            active_sessions[session_id]["logs"].append(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
+            update_db(add_log=msg)
             logger.info(f"Session {session_id}: {msg}")
 
         # Start the pipeline
         log_to_session("Lancement du pipeline multi-agents...")
-        active_sessions[session_id]["status"] = "processing"
-        active_sessions[session_id]["progress"] = 5
+        update_db(status="processing", progress=5)
         
         # Build a progress callback that also updates the session
         def progress_callback(pct: int):
-            active_sessions[session_id]["progress"] = pct
+            update_db(progress=pct)
 
         # Run the pipeline (blocking call in thread to avoid blocking event loop)
         loop = asyncio.get_event_loop()
@@ -255,17 +277,14 @@ async def orchestrate_session(session_id: str, url: str):
         )
 
         if result_path and os.path.exists(result_path):
-            active_sessions[session_id]["status"] = "completed"
-            active_sessions[session_id]["progress"] = 100
-            active_sessions[session_id]["result_url"] = f"/{result_path}"
+            update_db(status="completed", progress=100, result_url=f"/{result_path}")
             log_to_session("Génération réussie !")
         else:
             raise Exception("L'orchestrateur n'a pas produit de fichier final.")
             
     except Exception as e:
         logger.error(f"Error in session {session_id}: {str(e)}")
-        active_sessions[session_id]["status"] = "failed"
-        active_sessions[session_id]["logs"].append(f"ERREUR : {str(e)}")
+        update_db(status="failed", add_log=f"ERREUR : {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

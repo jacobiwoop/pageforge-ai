@@ -513,7 +513,7 @@ export default function Generate() {
             </div>
          </div>
          <button 
-          onClick={handleLogout}
+          onClick={logout}
           className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
          >
            Identity_Purge (Logout)
