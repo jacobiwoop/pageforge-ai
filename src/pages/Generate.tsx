@@ -5,6 +5,7 @@ import {
   ChevronRight, Download, Maximize2, History, MessageSquare, Send, Sparkles, FolderTree, ArrowLeft, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 // Types
 interface LogEntry {
@@ -47,6 +48,7 @@ const highlightCode = (code: string, ext: string) => {
 };
 
 export default function Generate() {
+  const { user, logout } = useAuth();
   const [viewMode, setViewMode] = useState<'form' | 'split'>('form');
   const [formMode, setFormMode] = useState<'link' | 'text'>('link');
   const [url, setUrl] = useState('');
@@ -60,13 +62,6 @@ export default function Generate() {
   const [fileContent, setFileContent] = useState<string>('');
   const [previewTab, setPreviewTab] = useState<'preview' | 'code'>('preview');
 
-  // Auth States
-  const [user, setUser] = useState<any>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authData, setAuthData] = useState({ email: '', password: '', full_name: '' });
-  const [authError, setAuthError] = useState('');
-  
   // Pipeline Stages
   const [stages, setStages] = useState<Stage[]>([
     { id: 'scrape', name: 'Scraping target data', status: 'pending' },
@@ -81,59 +76,6 @@ export default function Generate() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const logCountRef = useRef<number>(0);
   const API_BASE = "http://localhost:8000";
-
-  const checkAuth = async () => {
-    setIsCheckingAuth(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/me`);
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-      } else {
-        setUser(null);
-      }
-    } catch (e) {
-      setUser(null);
-    } finally {
-      setIsCheckingAuth(false);
-    }
-  };
-
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
-    try {
-      const res = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(authData)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        if (authMode === 'login') {
-          setUser(data.user);
-        } else {
-          setAuthMode('login');
-          setAuthError('Account created! Please login.');
-        }
-      } else {
-        setAuthError(data.detail || 'Authentication failed');
-      }
-    } catch (e) {
-      setAuthError('Connection error');
-    }
-  };
-
-  const handleLogout = async () => {
-    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
-    setUser(null);
-    setViewMode('form');
-  };
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +94,7 @@ export default function Generate() {
       const response = await fetch(`${API_BASE}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, user_id: "demo_user" })
+        body: JSON.stringify({ url, user_id: user?.id || "demo_user" })
       });
       const data = await response.json();
       setSessionId(data.session_id);

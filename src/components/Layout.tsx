@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Zap, Package, ShoppingCart, Search, Bell, Settings, FileText, HelpCircle, Plus } from 'lucide-react';
+import { LayoutGrid, Zap, Package, ShoppingCart, Search, Bell, Settings, FileText, HelpCircle, Plus, LogOut } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,6 +10,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { name: 'OVERVIEW', path: '/', icon: LayoutGrid },
@@ -25,16 +27,16 @@ export default function Layout({ children }: LayoutProps) {
           <h1 className="text-2xl font-bold tracking-tighter uppercase">RAW_LOGIC_AI</h1>
         </div>
         
-        <div className="p-4">
+        <div className="p-4 flex-1">
           <div className="bg-white brutalist-border p-3 mb-6">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2 h-2 rounded-full bg-[var(--color-neon)] animate-pulse"></div>
               <span className="font-bold text-sm">TERMINAL_V1</span>
             </div>
-            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">AI_CORE_ACTIVE</div>
+            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider line-clamp-1">User: {user?.name || 'GUEST'}</div>
           </div>
 
-          <nav className="space-y-2 flex-1">
+          <nav className="space-y-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -55,19 +57,13 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         <div className="mt-auto p-4 space-y-4">
-          <button className="w-full bg-[var(--color-neon)] brutalist-border brutalist-shadow py-3 font-bold flex items-center justify-center gap-2 hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all active:bg-[var(--color-neon-dark)]">
-            <Plus className="w-5 h-5" />
-            NEW_PROJECT
+          <button 
+            onClick={logout}
+            className="w-full bg-white border-2 border-black brutalist-shadow-sm py-3 font-bold flex items-center justify-center gap-2 hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-none transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            LOGOUT_SESSION
           </button>
-          
-          <div className="pt-4 border-t-2 border-black space-y-2">
-            <a href="#" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black">
-              <FileText className="w-4 h-4" /> DOCS
-            </a>
-            <a href="#" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black">
-              <HelpCircle className="w-4 h-4" /> SUPPORT
-            </a>
-          </div>
         </div>
       </aside>
 
@@ -112,23 +108,26 @@ export default function Layout({ children }: LayoutProps) {
             <button className="p-2 hover:bg-gray-100 rounded-none transition-colors">
               <Bell className="w-5 h-5" />
             </button>
-            <button className="p-2 hover:bg-gray-100 rounded-none transition-colors">
-              <Settings className="w-5 h-5" />
-            </button>
-            <div className="w-10 h-10 brutalist-border overflow-hidden bg-gray-200">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full object-cover" />
+            <div className="flex items-center gap-3 ml-2 pl-4 border-l-2 border-black">
+              <div className="text-right hidden sm:block">
+                <p className="text-[10px] font-black uppercase text-gray-400">Identity_Live</p>
+                <p className="text-xs font-bold">{user?.name}</p>
+              </div>
+              <div className="w-10 h-10 brutalist-border overflow-hidden bg-gray-200">
+                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} alt="User" className="w-full h-full object-cover" />
+              </div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-gray-50">
           {children}
         </main>
         
         {/* Footer Status Bar */}
         <footer className="h-10 border-t-2 border-black bg-white flex items-center justify-between px-6 text-[10px] font-mono uppercase text-gray-500 shrink-0">
-          <div>© 2024 RAW_LOGIC_AI // SYSTEM_UPTIME: 99.98% // LATENCY: 24MS</div>
+          <div>© 2024 RAW_LOGIC_AI // SYSTEM_UPTIME: 99.98% // SESSION: {user?.id} // STATUS: AUTHENTICATED</div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-[var(--color-neon)]"></div>
