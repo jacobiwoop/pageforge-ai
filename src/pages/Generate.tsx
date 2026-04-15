@@ -38,6 +38,8 @@ export default function Generate() {
   const [url, setUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [showDetails, setShowDetails] = useState(false);
@@ -68,6 +70,8 @@ export default function Generate() {
     if (isGenerating) return;
 
     setIsGenerating(true);
+    setIsPublished(false);
+    setIsDirty(false);
     setLogs([{ message: "NEURAL_LINK_ESTABLISHED", time: new Date().toLocaleTimeString(), type: 'info' }]);
     logCountRef.current = 0;
     setProgress(5);
@@ -192,6 +196,9 @@ export default function Generate() {
           fetchSessionFiles(sessionId);
           if (data.status === 'completed' || data.status === 'failed') {
             setIsGenerating(false);
+            if (data.status === 'completed' && sessionId) {
+               setIsDirty(true); // Any completion from orchestrator means local is newer
+            }
             if (interval) clearInterval(interval);
           }
         } catch (e) { console.error(e); }
@@ -226,6 +233,10 @@ export default function Generate() {
             }
             if (data.progress) setProgress(data.progress);
             if (data.url) setUrl(data.url);
+            if (data.result_url && data.result_url.startsWith('http')) {
+               setIsPublished(true);
+               setIsDirty(false);
+            }
         })
         .catch(err => console.error("Failed to recover session", err));
       fetchSessionFiles(sid);
@@ -426,7 +437,7 @@ export default function Generate() {
             </div>
             
             <div className="flex items-center gap-4">
-               {sessionId && !isGenerating && (
+                {sessionId && !isGenerating && (
                  <button 
                     onClick={async () => {
                       setIsPublishing(true);
@@ -434,7 +445,8 @@ export default function Generate() {
                         const res = await fetch(`${API_BASE}/api/publish`, { method: 'POST', body: JSON.stringify({ session_id: sessionId }), headers: {'Content-Type': 'application/json'} });
                         const data = await res.json();
                         if (data.url) {
-                          alert(`Publié avec succès: ${data.url}`);
+                          setIsPublished(true);
+                          setIsDirty(false);
                           window.open(data.url, '_blank');
                         }
                       } finally {
@@ -442,10 +454,19 @@ export default function Generate() {
                       }
                     }}
                     disabled={isPublishing}
-                    className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 transition-colors px-5 py-2.5 rounded-lg"
+                    className={cn(
+                      "flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-white transition-all px-5 py-2.5 rounded-lg",
+                      isPublishing ? "bg-zinc-800" : 
+                      isDirty ? "bg-blue-600 hover:bg-blue-500 animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.4)]" :
+                      isPublished ? "bg-emerald-600 hover:bg-emerald-500" : "bg-zinc-800 hover:bg-zinc-700"
+                    )}
                  >
-                   {isPublishing ? <Loader2 className="w-4 h-4 animate-spin"/> : <Zap className="w-4 h-4 text-amber-300" />}
-                   Publish
+                   {isPublishing ? <Loader2 className="w-4 h-4 animate-spin"/> : 
+                    isDirty ? <Sparkles className="w-4 h-4 text-amber-300" /> :
+                    isPublished ? <CheckCircle2 className="w-4 h-4 text-emerald-200" /> : <Zap className="w-4 h-4 text-amber-300" />}
+                   {isPublishing ? "Publishing..." : 
+                    isDirty ? "Update Live Page" :
+                    isPublished ? "Live on Vercel" : "Publish to Web"}
                  </button>
                )}
             </div>
