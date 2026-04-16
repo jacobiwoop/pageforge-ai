@@ -1,29 +1,35 @@
 # STAGE 1: Build the React/Vite Frontend
-FROM node:18 AS frontend-builder
+FROM node:20-slim AS frontend-builder
 WORKDIR /app
 
-# Install frontend dependencies
-COPY package.json ./
-RUN npm install && npm rebuild @tailwindcss/oxide
+# Install system deps needed for native bindings (tailwindcss/oxide)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install frontend dependencies (skip package-lock.json to avoid binding mismatches)
+COPY package.json ./
+RUN npm install
 
 # Build frontend
 COPY . .
 RUN npm run build
 
 # STAGE 2: Backend + Node.js (OpenCode) + Final Image
-FROM python:3.10-slim
+FROM python:3.12-slim
 WORKDIR /app
 
-# Install system dependencies (curl and git for OpenCode, build-essential for some pip packages)
+# System dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     git \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js (required to run opencode-ai globally)
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+# Install Node.js 20 (required for OpenCode)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g opencode-ai
 
