@@ -8,7 +8,7 @@ export default function Identifiant() {
   const [opencodeKey, setOpencodeKey] = useState('');
   const [ollamaUrl, setOllamaUrl] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const API_BASE = import.meta.env.DEV ? "http://localhost:8000" : "";
+  const API_BASE = "";
 
   const fetchStatus = async () => {
     try {

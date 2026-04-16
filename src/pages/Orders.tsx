@@ -6,7 +6,7 @@ export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ total_orders: 0, total_revenue: 0 });
-  const API_BASE = import.meta.env.DEV ? "http://localhost:8000" : "";
+  const API_BASE = "";
 
   useEffect(() => {
     Promise.all([

@@ -63,7 +63,7 @@ export default function Generate() {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const logCountRef = useRef<number>(0);
-  const API_BASE = import.meta.env.DEV ? "http://localhost:8000" : "";
+  const API_BASE = "";
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
