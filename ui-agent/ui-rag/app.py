@@ -513,6 +513,23 @@ async def publish_session(request: PublishRequest, db: Session = Depends(get_db)
         logger.error(f"Error deploying to Vercel: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ── FRONTEND DEPLOYMENT (RENDER) ──────────────────────────────────────────────
+from fastapi.responses import FileResponse, JSONResponse
+
+dist_path = os.path.join(os.path.dirname(__file__), "dist")
+
+@app.exception_handler(404)
+async def custom_404_handler(request, exc):
+    index_file = os.path.join(dist_path, "index.html")
+    # Serve index.html for SPA routes, but keep 404s for API
+    if not request.url.path.startswith("/api/") and os.path.exists(index_file):
+        return FileResponse(index_file)
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
+# Mount static files ONLY if the dist folder exists (e.g. built via Docker)
+if os.path.exists(dist_path):
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="spa")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

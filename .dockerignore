@@ -1,0 +1,10 @@
+ui-agent/.venv
+ui-agent/__pycache__
+headless-service/node_modules
+node_modules
+dist
+.env
+*.db
+rawlogic_ai.db
+sessions/
+exports/
