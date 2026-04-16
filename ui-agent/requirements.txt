@@ -9,3 +9,5 @@ langchain
 langchain-community
 chromadb
 python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
