@@ -3,7 +3,8 @@
 # Script de démarrage unifié pour le projet UI-RAG
 # Utilise des chemins absolus pour plus de robustesse
 
-PROJECT_ROOT="/home/aiko/Documents/agent-cli"
+# Récupère le dossier courant du script de manière dynamique, peu importe d'où il est lancé
+PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 if [ -f "$PROJECT_ROOT/.env" ]; then
     set -a
