@@ -16,7 +16,7 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = import.meta.env.DEV ? "http://localhost:8000" : "";
 
   useEffect(() => {
     Promise.all([

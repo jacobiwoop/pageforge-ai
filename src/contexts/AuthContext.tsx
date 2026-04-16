@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = import.meta.env.DEV ? "http://localhost:8000" : "";
 
   const checkAuth = async () => {
     setIsCheckingAuth(true);

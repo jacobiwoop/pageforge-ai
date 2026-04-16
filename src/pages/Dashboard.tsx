@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = import.meta.env.DEV ? "http://localhost:8000" : "";
 
   useEffect(() => {
     Promise.all([

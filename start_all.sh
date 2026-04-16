@@ -48,8 +48,8 @@ echo "⚙️ [2/3] Lancement du Backend (FastAPI)..."
     cd "$PROJECT_ROOT/ui-agent/ui-rag"
     if [ -n "$VIRTUAL_ENV" ]; then
         "$VIRTUAL_ENV/bin/python" app.py > "$PROJECT_ROOT/backend.log" 2>&1
-    elif [ -f "$PROJECT_ROOT/.venv/bin/python" ]; then
-        "$PROJECT_ROOT/.venv/bin/python" app.py > "$PROJECT_ROOT/backend.log" 2>&1
+    elif [ -f "$PROJECT_ROOT/ui-agent/.venv/bin/python" ]; then
+        "$PROJECT_ROOT/ui-agent/.venv/bin/python" app.py > "$PROJECT_ROOT/backend.log" 2>&1
     else
         python3 app.py > "$PROJECT_ROOT/backend.log" 2>&1
     fi
