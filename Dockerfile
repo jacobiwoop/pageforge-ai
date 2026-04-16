@@ -1,10 +1,11 @@
 # STAGE 1: Build the React/Vite Frontend
-FROM node:18-slim AS frontend-builder
+FROM node:18 AS frontend-builder
 WORKDIR /app
 
 # Install frontend dependencies
-COPY package*.json ./
-RUN npm install
+COPY package.json ./
+RUN npm install && npm rebuild @tailwindcss/oxide
+
 
 # Build frontend
 COPY . .
