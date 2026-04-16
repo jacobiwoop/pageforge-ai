@@ -12,7 +12,11 @@ from sqlalchemy import func
 from database import get_db, init_db
 import models
 import auth
+import subprocess
 from orchestrator import run_full_pipeline
+
+OPENCODE_AUTH_DIR = os.path.expanduser("~/.local/share/opencode")
+OPENCODE_AUTH_PATH = os.path.join(OPENCODE_AUTH_DIR, "auth.json")
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -122,6 +126,81 @@ async def logout():
     response = JSONResponse(content={"status": "success"})
     response.delete_cookie("access_token")
     return response
+
+# ── CREDENTIALS ROUTES ───────────────────────────────────────────────────────
+
+class OpenCodeLoginRequest(BaseModel):
+    key: str
+
+@app.get("/api/auth/status")
+async def get_auth_status():
+    status = {
+        "ollama": {"signed_in": False, "user": None},
+        "opencode": {"signed_in": False, "provider": None}
+    }
+    
+    # Check OpenCode
+    if os.path.exists(OPENCODE_AUTH_PATH):
+        try:
+            with open(OPENCODE_AUTH_PATH, 'r') as f:
+                data = json.load(f)
+                if "ollama-cloud" in data:
+                    status["opencode"] = {"signed_in": True, "provider": "Ollama Cloud"}
+        except: pass
+        
+    # Check Ollama (Mockish logic or simple check)
+    try:
+        # If signed in, 'ollama list' or similar might work without error, 
+        # but let's try a simple heuristic or just provide the signin flow.
+        # For now, we'll rely on the user triggering the signin.
+        status["ollama"]["signed_in"] = False # Default until we find a better check
+    except: pass
+    
+    return status
+
+@app.post("/api/auth/ollama/signin")
+async def ollama_signin():
+    try:
+        # Run ollama signin and capture URL
+        process = subprocess.Popen(["ollama", "signin"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # We need to wait a bit to see if it prints the URL
+        await asyncio.sleep(2)
+        # Note: ollama signin might stay open. We just want the URL.
+        # But wait, we can't easily capture it if it expects a browser.
+        # Let's try to get it from stderr/stdout
+        output, error = process.communicate(timeout=5)
+        text = output + error
+        import re
+        url_match = re.search(r'https://ollama\.com/connect\?name=.*', text)
+        if url_match:
+            return {"url": url_match.group(0).strip()}
+        return {"message": "Already signed in or URL not found", "output": text}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/api/auth/ollama/signout")
+async def ollama_signout():
+    try:
+        subprocess.run(["ollama", "signout"], check=True)
+        return {"status": "success"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/api/auth/opencode/login")
+async def opencode_login(req: OpenCodeLoginRequest):
+    try:
+        os.makedirs(OPENCODE_AUTH_DIR, exist_ok=True)
+        auth_data = {
+            "ollama-cloud": {
+                "type": "api",
+                "key": req.key
+            }
+        }
+        with open(OPENCODE_AUTH_PATH, 'w') as f:
+            json.dump(auth_data, f, indent=2)
+        return {"status": "success", "message": "Credentials updated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ── STATS ROUTES ─────────────────────────────────────────────────────────────
 

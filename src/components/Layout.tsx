@@ -17,6 +17,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'GENERATE', path: '/generate', icon: Zap },
     { name: 'PRODUCTS', path: '/products', icon: Package },
     { name: 'ORDERS', path: '/orders', icon: ShoppingCart },
+    { name: 'IDENTIFIANTS', path: '/identifiant', icon: Target },
   ];
 
   return (

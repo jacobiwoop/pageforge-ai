@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Generate from './pages/Generate';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
+import Identifiant from './pages/Identifiant';
 import { AuthProvider } from './contexts/AuthContext';
 import AuthGuard from './components/AuthGuard';
 
@@ -23,6 +24,7 @@ export default function App() {
               <Route path="/generate" element={<Generate />} />
               <Route path="/products" element={<Products />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/identifiant" element={<Identifiant />} />
             </Routes>
           </Layout>
         </AuthGuard>
