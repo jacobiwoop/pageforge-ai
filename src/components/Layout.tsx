@@ -1,5 +1,6 @@
+import { ReactNode } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutGrid, Zap, Package, ShoppingCart, Search, Bell, Settings, FileText, HelpCircle, Plus, LogOut, Target, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,7 +11,6 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navItems = [
     { name: 'OVERVIEW', path: '/', icon: LayoutGrid },
@@ -23,18 +23,10 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row font-sans text-black">
       {/* Sidebar */}
-      <aside className={cn(
-        "bg-[#f4f4f5] border-r-2 border-black flex flex-col shrink-0 z-10 hidden md:flex h-screen sticky top-0 transition-all duration-300",
-        isCollapsed ? "w-20" : "w-64"
-      )}>
-        <div className="p-6 border-b-2 border-black bg-white flex items-center justify-between overflow-hidden">
-          {!isCollapsed && <h1 className="text-2xl font-bold tracking-tighter uppercase whitespace-nowrap">PAGEFORGE</h1>}
-          <button 
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1 brutalist-border bg-white hover:bg-gray-100 transition-colors mx-auto"
-          >
-            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-          </button>
+      <aside className="w-20 bg-[#f4f4f5] border-r-2 border-black flex flex-col shrink-0 z-10 hidden md:flex h-screen sticky top-0 transition-all duration-300 group/sidebar hover:w-64">
+        <div className="p-4 border-b-2 border-black bg-white flex flex-col items-center justify-center h-20 overflow-hidden">
+          <h1 className="text-xl font-black tracking-tighter uppercase whitespace-nowrap transition-all duration-300 group-hover/sidebar:text-2xl group-hover/sidebar:block hidden">PAGEFORGE</h1>
+          <h1 className="text-2xl font-black tracking-tighter uppercase transition-all duration-300 group-hover/sidebar:hidden block">P</h1>
         </div>
         
         <div className="p-4 flex-1">
@@ -47,13 +39,15 @@ export default function Layout({ children }: LayoutProps) {
                   key={item.name}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 font-medium transition-colors brutalist-border",
-                    isCollapsed ? "justify-center p-3" : "px-4 py-3",
+                    "flex items-center gap-3 font-medium transition-colors brutalist-border overflow-hidden",
+                    "justify-center group-hover/sidebar:justify-start p-3 group-hover/sidebar:px-4 group-hover/sidebar:py-3",
                     isActive ? "bg-[var(--color-neon)] brutalist-shadow-sm translate-x-[-2px] translate-y-[-2px]" : "bg-white hover:bg-gray-100"
                   )}
                 >
-                  <item.icon className="w-5 h-5" />
-                  {!isCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 font-bold uppercase tracking-tight">
+                    {item.name}
+                  </span>
                 </NavLink>
               );
             })}
@@ -63,13 +57,10 @@ export default function Layout({ children }: LayoutProps) {
         <div className="mt-auto p-4 space-y-4">
           <button 
             onClick={logout}
-            className={cn(
-              "w-full bg-white border-2 border-black brutalist-shadow-sm font-bold flex items-center justify-center gap-2 hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-none transition-all",
-              isCollapsed ? "p-3" : "py-3"
-            )}
+            className="w-full bg-white border-2 border-black brutalist-shadow-sm font-bold flex items-center justify-center gap-2 hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-none transition-all p-3 group-hover/sidebar:py-3"
           >
-            <LogOut className="w-5 h-5" />
-            {!isCollapsed && <span className="whitespace-nowrap">LOGOUT</span>}
+            <LogOut className="w-5 h-5 shrink-0" />
+            <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 hidden group-hover/sidebar:block">LOGOUT</span>
           </button>
         </div>
       </aside>
