@@ -6,3 +6,19 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Project Specific
+sessions/
+exports/
+temp/
