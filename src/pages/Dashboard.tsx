@@ -43,21 +43,11 @@ export default function Dashboard() {
           changeLabel="SQLITE STORE" 
           icon={<Target className="w-10 h-10 text-gray-200" />}
         />
-        <div className="bg-black text-white brutalist-border p-6 flex flex-col justify-between relative overflow-hidden">
-          <div className="relative z-10">
-            <h3 className="text-xs font-bold text-[var(--color-neon)] tracking-wider mb-2">AI EFFICIENCY</h3>
-            <div className="text-5xl font-bold text-[var(--color-neon)] mb-4">{stats ? `${stats.ai_efficiency}%` : '--'}</div>
-            <div className="text-[10px] font-mono text-[var(--color-neon-dark)]">CORE LOAD: STABLE</div>
-          </div>
-          <div className="absolute right-0 bottom-0 w-32 h-32 opacity-20">
-            <Activity className="w-full h-full text-[var(--color-neon)]" />
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Active Products */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           <div className="flex items-center justify-between border-b-2 border-black pb-2">
             <div>
               <h2 className="text-2xl font-bold uppercase tracking-tighter">RECENT PRODUCTS</h2>
@@ -90,53 +80,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Activity Flux */}
-        <div className="bg-white brutalist-border p-6 flex flex-col h-full">
-          <div className="flex items-center gap-2 mb-8">
-            <Activity className="w-5 h-5" />
-            <h2 className="text-xl font-bold uppercase tracking-tighter">ACTIVITY FLUX</h2>
-          </div>
-
-          <div className="relative flex-1">
-            <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-black"></div>
-            
-            <div className="space-y-8 relative">
-              <TimelineItem 
-                time="14:22:01" 
-                title="NEW SALE RECORDED" 
-                desc="Product ID: #849202 processed successfully." 
-                highlight="+$420.00"
-                icon={<ShoppingCart className="w-4 h-4 text-white" />}
-                iconBg="bg-[var(--color-neon-dark)]"
-              />
-              <TimelineItem 
-                time="13:45:12" 
-                title="AI OPTIMIZATION TRIGGERED" 
-                desc="Neural-Sync Watch X1 bidding adjusted by 12%." 
-                icon={<Zap className="w-4 h-4 text-black" />}
-                iconBg="bg-white"
-              />
-              <TimelineItem 
-                time="12:10:05" 
-                title="STOCK ALERT" 
-                desc="Velocity Runner Red reaching critical low levels (12 units)." 
-                icon={<AlertTriangle className="w-4 h-4 text-white" />}
-                iconBg="bg-[var(--color-alert)]"
-              />
-              <TimelineItem 
-                time="11:30:58" 
-                title="CAMPAIGN SCALED" 
-                desc="Budget increase for 'Summer Reach' approved by AI." 
-                icon={<TrendingUp className="w-4 h-4 text-white" />}
-                iconBg="bg-[var(--color-neon-dark)]"
-              />
-            </div>
-          </div>
-
-          <button className="w-full mt-8 bg-black text-white py-3 font-bold uppercase text-sm hover:bg-gray-800 transition-colors">
-            VIEW FULL TERMINAL LOGS
-          </button>
-        </div>
       </div>
     </div>
   );

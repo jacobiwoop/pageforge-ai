@@ -29,13 +29,6 @@ export default function Layout({ children }: LayoutProps) {
         </div>
         
         <div className="p-4 flex-1">
-          <div className="bg-white brutalist-border p-3 mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 rounded-full bg-[var(--color-neon)] animate-pulse"></div>
-              <span className="font-bold text-sm">TERMINAL_V1</span>
-            </div>
-            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider line-clamp-1">User: {user?.name || 'GUEST'}</div>
-          </div>
 
           <nav className="space-y-2">
             {navItems.map((item) => {
@@ -129,16 +122,6 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
         
-        {/* Footer Status Bar */}
-        <footer className="h-10 border-t-2 border-black bg-white flex items-center justify-between px-6 text-[10px] font-mono uppercase text-gray-500 shrink-0">
-          <div>© 2024 PAGEFORGE // SYSTEM_UPTIME: 99.98% // SESSION: {user?.id} // STATUS: AUTHENTICATED</div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-[var(--color-neon)]"></div>
-              ALL SYSTEMS OPERATIONAL
-            </div>
-          </div>
-        </footer>
       </div>
     </div>
   );
