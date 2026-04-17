@@ -26,6 +26,8 @@ def deploy_to_vercel(session_dir: str, vercel_token: str) -> str:
 
         result = subprocess.run(cmd, cwd=session_dir, capture_output=True, text=True)
         if result.returncode != 0:
+            logging.error(f"Vercel CLI Error (Return Code {result.returncode}):\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
+            return None
 
         output = result.stdout + "\n" + result.stderr
         
