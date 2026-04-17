@@ -22,6 +22,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/generate" element={<Generate />} />
+              <Route path="/generate/:sessionId" element={<Generate />} />
               <Route path="/products" element={<Products />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/identifiant" element={<Identifiant />} />

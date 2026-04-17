@@ -35,17 +35,19 @@ def kill_ports():
     subprocess.run("pkill -f chrome", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     time.sleep(1)
 
-def ensure_dependencies():
+def ensure_dependencies(skip=False):
+    if skip:
+        log("⏭️  Saut de la vérification des dépendances.", "yellow")
+        return
     log("⚙️ Vérification des dépendances Backend...", "cyan")
     pip_exec = PYTHON_EXEC.replace("python", "pip")
     req_file = os.path.join(PROJECT_ROOT, "ui-agent", "requirements.txt")
     
     if os.path.exists(req_file):
         try:
-            # Installation silencieuse, s'arrête vite si tout est déjà satisfait
-            # On installe explicitement jose & passlib aussi pour éviter les conflits
-            subprocess.run([pip_exec, "install", "-r", req_file], check=True, stdout=subprocess.DEVNULL)
-            subprocess.run([pip_exec, "install", "python-jose[cryptography]", "passlib[bcrypt]"], check=True, stdout=subprocess.DEVNULL)
+            # On affiche le flux pour que l'utilisateur voit ce qu'il se passe
+            subprocess.run([pip_exec, "install", "-r", req_file], check=True)
+            subprocess.run([pip_exec, "install", "python-jose[cryptography]", "passlib[bcrypt]"], check=True)
             log("✅ Dépendances Python prêtes.", "green")
         except Exception as e:
             log(f"⚠️ Erreur lors de l'installation des dépendances Python : {e}", "red")
@@ -95,10 +97,11 @@ def start_processes():
     return processes
 
 def main():
+    skip_deps = "--skip-deps" in sys.argv
     log(f"🚀 Démarrage global de l'Orchestrateur PAGEFORGE depuis : {PROJECT_ROOT}\n", "green")
     
     kill_ports()
-    ensure_dependencies()
+    ensure_dependencies(skip=skip_deps)
     
     procs = start_processes()
     

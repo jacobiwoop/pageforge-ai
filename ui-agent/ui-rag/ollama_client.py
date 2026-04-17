@@ -39,7 +39,7 @@ def _call_ollama(messages: list, model: str, stream: bool = True) -> dict | str:
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
+            with urllib.request.urlopen(req, timeout=300) as resp:
                 if stream:
                     for line in resp:
                         line = line.decode("utf-8").strip()

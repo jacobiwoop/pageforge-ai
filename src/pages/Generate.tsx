@@ -4,6 +4,7 @@ import {
   CheckCircle2, AlertCircle, Layout, Code2, Eye, FileJson, FileCode, Search,
   ChevronRight, Download, Maximize2, History, MessageSquare, Send, Sparkles, FolderTree, ArrowLeft, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -32,6 +33,8 @@ interface Stage {
 // Highlighting is now handled by react-syntax-highlighter
 
 export default function Generate() {
+  const { sessionId: routeSessionId } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [viewMode, setViewMode] = useState<'form' | 'split'>('form');
   const [formMode, setFormMode] = useState<'link' | 'text'>('link');
@@ -88,6 +91,7 @@ export default function Generate() {
       });
       const data = await response.json();
       setSessionId(data.session_id);
+      navigate(`/generate/${data.session_id}`, { replace: true });
     } catch (err) {
       setLogs(prev => [...prev, { message: "CORE_FAILURE: API_UNREACHABLE", time: new Date().toLocaleTimeString(), type: 'error' }]);
       setIsGenerating(false);
@@ -194,6 +198,18 @@ export default function Generate() {
           }
           if (data?.progress !== undefined) setProgress(data.progress);
           fetchSessionFiles(sessionId);
+          
+          // RE-FETCH selected file content to show "streaming" updates
+          if (selectedFile) {
+            try {
+              const fileRes = await fetch(`${API_BASE}${selectedFile.url}`);
+              if (fileRes.ok) {
+                const text = await fileRes.text();
+                if (text !== fileContent) setFileContent(text);
+              }
+            } catch (fe) { console.error("File update failed", fe); }
+          }
+
           if (data.status === 'completed' || data.status === 'failed') {
             setIsGenerating(false);
             if (data.status === 'completed' && sessionId) {
@@ -210,10 +226,8 @@ export default function Generate() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs, showDetails]);
-
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sid = params.get('session_id');
+    const sid = routeSessionId || new URLSearchParams(window.location.search).get('session_id');
     if (sid && sid !== sessionId) {
       setSessionId(sid);
       setViewMode('split');
@@ -237,11 +251,15 @@ export default function Generate() {
                setIsPublished(true);
                setIsDirty(false);
             }
+            // If the status is still processing, make sure isGenerating is true to trigger polling
+            if (data.status === 'processing' || data.status === 'starting') {
+              setIsGenerating(true);
+            }
         })
         .catch(err => console.error("Failed to recover session", err));
       fetchSessionFiles(sid);
     }
-  }, []);
+  }, [routeSessionId]);
 
   if (!user) {
     return null;
@@ -249,10 +267,10 @@ export default function Generate() {
 
   if (viewMode === 'split') {
     return (
-      <div className="fixed inset-0 top-[80px] md:left-[256px] flex bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
+      <div className="w-full h-[calc(100vh-120px)] flex bg-zinc-950 text-zinc-300 overflow-hidden font-sans relative z-10">
         
         {/* PANEL 1: CONVERSATIONAL CHAT */}
-        <div className="w-80 lg:w-[450px] shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950">
+        <div className="w-80 lg:w-[450px] shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950 min-h-0">
           <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/30">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-zinc-500" />
@@ -266,7 +284,7 @@ export default function Generate() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             {/* 1. User Message (The Link) */}
             <div className="flex flex-col items-end gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
                <div className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-lg">
@@ -381,7 +399,7 @@ export default function Generate() {
 
         {/* PANEL 2: COMPACT FILE EXPLORER */}
         {previewTab === 'code' && (
-          <div className="w-56 shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col">
+          <div className="w-56 shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col min-h-0">
           <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
              <div className="flex items-center gap-2">
                 <FolderTree className="w-3.5 h-3.5 text-zinc-500" />
@@ -411,7 +429,7 @@ export default function Generate() {
         )}
 
         {/* PANEL 3: MAIN VIEWER AREA */}
-        <div className="flex-1 min-w-0 flex flex-col bg-zinc-950">
+        <div className="flex-1 min-w-0 flex flex-col bg-zinc-950 min-h-0">
           <div className="h-14 border-b border-zinc-800 flex items-center justify-between px-6 bg-zinc-950/80 backdrop-blur-md z-10 shadow-sm">
             <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50">
               <button 
@@ -478,11 +496,11 @@ export default function Generate() {
                 <iframe src={`${API_BASE}${selectedFile.url}`} className="w-full h-full border-none" />
               </div>
             ) : (
-              <div className="w-full h-full overflow-auto bg-zinc-950 custom-scrollbar">
+              <div className="w-full h-full overflow-y-auto bg-zinc-950 custom-scrollbar absolute inset-0">
                 <SyntaxHighlighter
                   language={selectedFile?.ext === 'html' ? 'xml' : selectedFile?.ext === 'js' || selectedFile?.ext === 'jsx' ? 'javascript' : selectedFile?.ext || 'text'}
                   style={vscDarkPlus}
-                  customStyle={{ margin: 0, padding: '2rem', fontSize: '13px', background: 'transparent' }}
+                  customStyle={{ margin: 0, padding: '2rem', fontSize: '13px', background: 'transparent', minHeight: '100%' }}
                   showLineNumbers={true}
                 >
                   {fileContent}
@@ -497,7 +515,7 @@ export default function Generate() {
 
   // Initial Form Layout
   return (
-    <div className="max-w-4xl mx-auto space-y-12 py-10">
+    <div className="max-w-4xl mx-auto space-y-12 py-10 px-4 md:px-0">
       <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-4 rounded-3xl">
          <div className="flex items-center gap-4 px-4">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center font-black text-black">

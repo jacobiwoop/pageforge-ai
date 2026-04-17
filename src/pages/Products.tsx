@@ -185,7 +185,7 @@ function ProductTableRow({ image, name, id, status, date, time, url, disabled = 
           PREVIEW
         </a>
         <Link 
-          to={`/generate?session_id=${id}`}
+          to={`/generate/${id}`}
           className={cn(
             "px-4 py-2 brutalist-border inline-flex items-center gap-2 text-xs font-bold uppercase transition-colors bg-black text-white hover:bg-gray-800",
             disabled && "opacity-50 pointer-events-none"

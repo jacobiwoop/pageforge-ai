@@ -54,7 +54,7 @@ RÉPONSE JSON :
     ]
 
     print(f"🗺️  Planification des contenus par direction...")
-    raw_response = _call_ollama(messages, model, stream=False)
+    raw_response = _call_ollama(messages, model, stream=True)
     
     if not raw_response:
         print("⚠️ Réponse vide reçue de l'IA pour la planification.")

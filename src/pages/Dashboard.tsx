@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, Eye, Target, Activity, Edit2, TrendingUp, AlertTriangle, ShoppingCart, Zap, Upload, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
 export default function Dashboard() {
@@ -186,9 +186,12 @@ function ProductRow({ name, status, sales, revenue, roas, image, isDraft = false
       </div>
 
       <div className="flex flex-col gap-2 shrink-0">
-        <button className="w-10 h-10 brutalist-border flex items-center justify-center hover:bg-[var(--color-neon)] transition-colors">
+        <Link 
+          to={`/generate/${p.id}`}
+          className="w-10 h-10 brutalist-border flex items-center justify-center hover:bg-[var(--color-neon)] transition-colors"
+        >
           <Edit2 className="w-4 h-4" />
-        </button>
+        </Link>
         <button className="w-10 h-10 brutalist-border flex items-center justify-center hover:bg-[var(--color-neon)] transition-colors">
           {isDraft ? <Upload className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
         </button>

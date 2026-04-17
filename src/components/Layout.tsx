@@ -122,7 +122,10 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-gray-50">
+        <main className={cn(
+          "flex-1 bg-gray-50",
+          location.pathname === '/generate' ? "overflow-hidden" : "p-4 md:p-8 overflow-y-auto"
+        )}>
           {children}
         </main>
         

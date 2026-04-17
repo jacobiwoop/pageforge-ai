@@ -30,7 +30,7 @@ RÉPONSE JSON :
     ]
 
     print(f"✍️  Synthèse du produit en cours...")
-    raw_response = _call_ollama(messages, model, stream=False)
+    raw_response = _call_ollama(messages, model, stream=True)
     synthesized = _parse_json_response(raw_response)
     
     return synthesized
