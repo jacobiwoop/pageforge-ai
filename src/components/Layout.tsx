@@ -21,12 +21,10 @@ export default function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row font-sans text-black">
       {/* Sidebar */}
       <aside className="w-20 bg-[#f4f4f5] border-r-2 border-black flex flex-col shrink-0 z-10 hidden md:flex h-screen sticky top-0 transition-all duration-300 group/sidebar hover:w-64">
-        <div className="p-4 border-b-2 border-black bg-white flex flex-col items-center justify-center h-20 overflow-hidden">
-          <h1 className="text-xl font-black tracking-tighter uppercase whitespace-nowrap transition-all duration-300 group-hover/sidebar:text-2xl group-hover/sidebar:block hidden">PAGEFORGE</h1>
-          <h1 className="text-2xl font-black tracking-tighter uppercase transition-all duration-300 group-hover/sidebar:hidden block">P</h1>
+        <div className="p-4 border-b-2 border-black bg-white flex flex-col items-center justify-center h-20 overflow-hidden shrink-0">
+          <h1 className="text-2xl font-black tracking-tighter uppercase transition-all duration-300">P</h1>
         </div>
         
         <div className="p-4 flex-1">
@@ -69,11 +67,12 @@ export default function Layout({ children }: LayoutProps) {
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Header */}
         <header className="h-20 border-b-2 border-black bg-white flex items-center justify-between px-6 sticky top-0 z-20">
-          <div className="flex items-center gap-8 md:hidden">
-            <h1 className="text-xl font-bold tracking-tighter uppercase">PAGEFORGE</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-black tracking-tighter uppercase">PAGEFORGE</h1>
+            <div className="h-8 w-0.5 bg-black mx-4 hidden md:block"></div>
           </div>
           
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8 flex-1">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
