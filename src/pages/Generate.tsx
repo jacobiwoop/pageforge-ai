@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Link2, FileText, Zap, ArrowRight, Loader2, Terminal as TerminalIcon, 
   CheckCircle2, AlertCircle, Layout, Code2, Eye, FileJson, FileCode, Search,
-  ChevronRight, Download, Maximize2, History, MessageSquare, Send, Sparkles, FolderTree, ArrowLeft, ChevronDown, ChevronUp
+  ChevronRight, Download, Maximize2, History, MessageSquare, Send, Sparkles, FolderTree, ArrowLeft, ChevronDown, ChevronUp, Upload
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
