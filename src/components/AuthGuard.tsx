@@ -40,7 +40,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
              <div className="inline-block p-3 bg-zinc-800 rounded-2xl mb-4">
                 <Sparkles className="w-8 h-8 text-emerald-400" />
              </div>
-             <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Raw_Logic_AI</h1>
+             <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">PAGEFORGE</h1>
              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Identify to proceed</p>
            </div>
 
