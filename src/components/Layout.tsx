@@ -1,6 +1,5 @@
-import { ReactNode } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Zap, Package, ShoppingCart, Search, Bell, Settings, FileText, HelpCircle, Plus, LogOut, Target } from 'lucide-react';
+import { LayoutGrid, Zap, Package, ShoppingCart, Search, Bell, Settings, FileText, HelpCircle, Plus, LogOut, Target, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -11,6 +10,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navItems = [
     { name: 'OVERVIEW', path: '/', icon: LayoutGrid },
@@ -23,9 +23,18 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row font-sans text-black">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-[#f4f4f5] border-r-2 border-black flex flex-col shrink-0 z-10 hidden md:flex h-screen sticky top-0">
-        <div className="p-6 border-b-2 border-black bg-white">
-          <h1 className="text-2xl font-bold tracking-tighter uppercase">PAGEFORGE</h1>
+      <aside className={cn(
+        "bg-[#f4f4f5] border-r-2 border-black flex flex-col shrink-0 z-10 hidden md:flex h-screen sticky top-0 transition-all duration-300",
+        isCollapsed ? "w-20" : "w-64"
+      )}>
+        <div className="p-6 border-b-2 border-black bg-white flex items-center justify-between overflow-hidden">
+          {!isCollapsed && <h1 className="text-2xl font-bold tracking-tighter uppercase whitespace-nowrap">PAGEFORGE</h1>}
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 brutalist-border bg-white hover:bg-gray-100 transition-colors mx-auto"
+          >
+            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
         </div>
         
         <div className="p-4 flex-1">
@@ -38,12 +47,13 @@ export default function Layout({ children }: LayoutProps) {
                   key={item.name}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 font-medium transition-colors brutalist-border",
+                    "flex items-center gap-3 font-medium transition-colors brutalist-border",
+                    isCollapsed ? "justify-center p-3" : "px-4 py-3",
                     isActive ? "bg-[var(--color-neon)] brutalist-shadow-sm translate-x-[-2px] translate-y-[-2px]" : "bg-white hover:bg-gray-100"
                   )}
                 >
                   <item.icon className="w-5 h-5" />
-                  {item.name}
+                  {!isCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
                 </NavLink>
               );
             })}
@@ -53,10 +63,13 @@ export default function Layout({ children }: LayoutProps) {
         <div className="mt-auto p-4 space-y-4">
           <button 
             onClick={logout}
-            className="w-full bg-white border-2 border-black brutalist-shadow-sm py-3 font-bold flex items-center justify-center gap-2 hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-none transition-all"
+            className={cn(
+              "w-full bg-white border-2 border-black brutalist-shadow-sm font-bold flex items-center justify-center gap-2 hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-none transition-all",
+              isCollapsed ? "p-3" : "py-3"
+            )}
           >
             <LogOut className="w-5 h-5" />
-            LOGOUT_SESSION
+            {!isCollapsed && <span className="whitespace-nowrap">LOGOUT</span>}
           </button>
         </div>
       </aside>
