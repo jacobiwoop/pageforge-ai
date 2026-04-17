@@ -40,13 +40,20 @@ def scrape_product(url: str, output_file: str, log_callback=None):
 
         log(f"📡 Envoi au service headless local (Port 3005) via {script_name}...")
         
-        endpoint = "http://localhost:3005/run"
+        endpoint = "http://127.0.0.1:3005/run"
         payload = {
             "script": script_body,
-            "timeout": 90000
+            "timeout": 120000 # Augmenté à 120s
         }
 
-        response = requests.post(endpoint, json=payload, timeout=120)
+        log(f"🔗 Connexion à {endpoint}...")
+        response = requests.post(
+            endpoint, 
+            json=payload, 
+            timeout=150,
+            proxies={"http": None, "https": None} # Désactive les proxys système qui pourraient bloquer le local
+        )
+        log(f"📥 Réponse reçue (Code: {response.status_code})")
         response.raise_for_status()
         result = response.json()
 
