@@ -267,7 +267,7 @@ export default function Generate() {
 
   if (viewMode === 'split') {
     return (
-      <div className="w-full h-[calc(100vh-120px)] flex bg-zinc-950 text-zinc-300 overflow-hidden font-sans relative z-10">
+      <div className="w-full h-full flex bg-zinc-950 text-zinc-300 overflow-hidden font-sans relative z-10">
         
         {/* PANEL 1: CONVERSATIONAL CHAT */}
         <div className="w-80 lg:w-[450px] shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950 min-h-0">
@@ -519,24 +519,6 @@ export default function Generate() {
   // Initial Form Layout
   return (
     <div className="max-w-4xl mx-auto space-y-12 py-10 px-4 md:px-0">
-      <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-4 rounded-3xl">
-         <div className="flex items-center gap-4 px-4">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center font-black text-black">
-               {user.name.charAt(0)}
-            </div>
-            <div>
-               <p className="text-[10px] font-black text-zinc-500 uppercase">Authenticated User</p>
-               <p className="text-sm font-bold text-white tracking-tight">{user.name}</p>
-            </div>
-         </div>
-         <button 
-          onClick={logout}
-          className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
-         >
-           Identity_Purge (Logout)
-         </button>
-      </div>
-
       <div className="text-center space-y-4">
         <h1 className="text-5xl font-black tracking-tighter uppercase text-white border-4 border-white inline-block px-4 py-2 italic bg-zinc-950 shadow-[8px_8px_0px_#10B981]">PAGEFORGE</h1>
         <p className="text-xs font-mono text-zinc-500 uppercase tracking-[0.3em] font-bold animate-pulse">Advanced Neural Orchestration Core V2.0</p>

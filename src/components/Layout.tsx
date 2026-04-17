@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Zap, Package, ShoppingCart, Search, Bell, Settings, FileText, HelpCircle, Plus, LogOut, Target, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Zap, Package, ShoppingCart, Settings, FileText, HelpCircle, Plus, LogOut, Target, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -21,7 +21,7 @@ export default function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-black overflow-hidden">
+    <div className="h-screen flex flex-col font-sans text-black overflow-hidden relative">
       {/* Header */}
       <header className="h-20 border-b-2 border-black bg-white flex items-center justify-between px-6 sticky top-0 z-20 shrink-0">
         <div className="flex items-center gap-4">
@@ -29,39 +29,7 @@ export default function Layout({ children }: LayoutProps) {
           <div className="h-8 w-0.5 bg-black mx-4 hidden md:block"></div>
         </div>
         
-        <nav className="hidden md:flex items-center gap-8 flex-1">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <NavLink
-                key={item.name}
-                to={item.path}
-                className={cn(
-                  "font-bold text-sm tracking-wider uppercase transition-colors relative",
-                  isActive ? "text-[var(--color-neon-dark)]" : "text-gray-500 hover:text-black"
-                )}
-              >
-                {item.name}
-                {isActive && (
-                  <span className="absolute -bottom-1 left-0 w-full h-1 bg-[var(--color-neon)]"></span>
-                )}
-              </NavLink>
-            );
-          })}
-        </nav>
-
         <div className="flex items-center gap-4">
-          <div className="relative hidden lg:block">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="CMD+K TO SEARCH" 
-              className="pl-9 pr-4 py-2 brutalist-border bg-[#f4f4f5] text-sm font-mono focus:outline-none focus:bg-white w-64"
-            />
-          </div>
-          <button className="p-2 hover:bg-gray-100 rounded-none transition-colors">
-            <Bell className="w-5 h-5" />
-          </button>
           <div className="flex items-center gap-3 ml-2 pl-4 border-l-2 border-black">
             <div className="text-right hidden sm:block">
               <p className="text-[10px] font-black uppercase text-gray-400">Identity_Live</p>
@@ -117,8 +85,8 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Main Content Area */}
         <main className={cn(
-          "flex-1 bg-gray-50 overflow-y-auto relative h-full",
-          location.pathname.startsWith('/generate') ? "overflow-hidden" : "p-4 md:p-8"
+          "flex-1 bg-gray-50 overflow-y-auto relative min-h-0",
+          location.pathname.startsWith('/generate') ? "" : "p-4 md:p-8"
         )}>
           {children}
         </main>
