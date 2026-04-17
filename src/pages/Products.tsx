@@ -199,18 +199,20 @@ function ProductTableRow({ image, name, id, status, date, time, url, onDelete, d
         <div className="font-bold">{time}</div>
       </td>
       <td className="p-4 flex gap-2">
-        <a 
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className={cn(
-            "px-4 py-2 brutalist-border inline-flex items-center gap-2 text-xs font-bold uppercase transition-colors bg-white hover:bg-[var(--color-neon)]",
-            disabled && "opacity-50 pointer-events-none"
-          )}
-        >
-          <ExternalLink className="w-3 h-3" />
-          PREVIEW
-        </a>
+        {status === 'LIVE' && (
+          <a 
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(
+              "px-4 py-2 brutalist-border inline-flex items-center gap-2 text-xs font-bold uppercase transition-colors bg-white hover:bg-[var(--color-neon)]",
+              disabled && "opacity-50 pointer-events-none"
+            )}
+          >
+            <ExternalLink className="w-3 h-3" />
+            PREVIEW
+          </a>
+        )}
         <Link 
           to={`/generate/${id}`}
           className={cn(

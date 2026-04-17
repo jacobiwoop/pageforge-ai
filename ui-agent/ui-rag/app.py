@@ -366,13 +366,14 @@ async def list_products(db: Session = Depends(get_db)):
     
     products = []
     for s in sessions:
+        is_live = s.result_url and s.result_url.startswith("http")
         products.append({
             "id": s.id,
             "name": s.product_name or "Project Sans Nom",
-            "url": s.result_url,
+            "url": s.result_url if is_live else None,
             "date": s.created_at.strftime('%Y.%m.%d'),
             "time": s.created_at.strftime('%H:%M:%S'),
-            "status": "LIVE"
+            "status": "LIVE" if is_live else "DRAFT"
         })
     return products
 
