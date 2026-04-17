@@ -80,8 +80,8 @@ export default function Layout({ children }: LayoutProps) {
         
         {/* Sidebar (Absolute Overlap) */}
         <aside className="absolute left-0 top-0 bottom-0 w-20 bg-[#f4f4f5] border-r-2 border-black flex flex-col z-30 hidden md:flex transition-all duration-300 group/sidebar hover:w-64 overflow-y-auto brutalist-shadow-lg">
-          <div className="p-4 flex-1">
-            <nav className="space-y-2">
+          <div className="p-2 flex-1">
+            <nav className="space-y-3">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
@@ -89,13 +89,13 @@ export default function Layout({ children }: LayoutProps) {
                     key={item.name}
                     to={item.path}
                     className={cn(
-                      "flex items-center gap-3 font-medium transition-colors brutalist-border overflow-hidden",
-                      "justify-center group-hover/sidebar:justify-start p-3 group-hover/sidebar:px-4 group-hover/sidebar:py-3",
+                      "flex items-center font-bold transition-all duration-300 brutalist-border relative group/link",
+                      "justify-center group-hover/sidebar:justify-start p-3 group-hover/sidebar:px-6 group-hover/sidebar:py-4 group-hover/sidebar:gap-4",
                       isActive ? "bg-[var(--color-neon)] brutalist-shadow-sm translate-x-[-2px] translate-y-[-2px]" : "bg-white hover:bg-gray-100"
                     )}
                   >
-                    <item.icon className="w-5 h-5 shrink-0" />
-                    <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 font-bold uppercase tracking-tight">
+                    <item.icon className="w-6 h-6 shrink-0" />
+                    <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-all duration-300 uppercase tracking-tighter text-sm hidden group-hover/sidebar:inline-block">
                       {item.name}
                     </span>
                   </NavLink>
@@ -107,17 +107,17 @@ export default function Layout({ children }: LayoutProps) {
           <div className="mt-auto p-4 space-y-4">
             <button 
               onClick={logout}
-              className="w-full bg-white border-2 border-black brutalist-shadow-sm font-bold flex items-center justify-center gap-2 hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-none transition-all p-3 group-hover/sidebar:py-3"
+              className="w-full bg-white border-2 border-black brutalist-shadow-sm font-bold flex items-center justify-center group-hover/sidebar:justify-start hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-none transition-all p-3 group-hover/sidebar:px-6 group-hover/sidebar:py-4 group-hover/sidebar:gap-4"
             >
-              <LogOut className="w-5 h-5 shrink-0" />
-              <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 hidden group-hover/sidebar:block">LOGOUT</span>
+              <LogOut className="w-6 h-6 shrink-0" />
+              <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-all duration-300 hidden group-hover/sidebar:block uppercase tracking-tighter text-sm">LOGOUT</span>
             </button>
           </div>
         </aside>
 
         {/* Main Content Area */}
         <main className={cn(
-          "flex-1 bg-gray-50 overflow-y-auto relative",
+          "flex-1 bg-gray-50 overflow-y-auto relative h-full",
           location.pathname.startsWith('/generate') ? "overflow-hidden" : "p-4 md:p-8"
         )}>
           {children}
