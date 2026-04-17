@@ -33,15 +33,23 @@ body {
 }
 
 .brutalist-border-thick {
-  border: 3px solid #000;
+  border: 4px solid #000;
 }
 
 .brutalist-shadow {
-  box-shadow: 4px 4px 0px 0px #000;
+  box-shadow: 8px 8px 0px 0px #000;
 }
 
 .brutalist-shadow-sm {
-  box-shadow: 2px 2px 0px 0px #000;
+  box-shadow: 4px 4px 0px 0px #000;
+}
+
+.brutalist-input-autofill:-webkit-autofill,
+.brutalist-input-autofill:-webkit-autofill:hover, 
+.brutalist-input-autofill:-webkit-autofill:focus {
+  -webkit-text-fill-color: #000;
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Custom scrollbar for terminal feel */
