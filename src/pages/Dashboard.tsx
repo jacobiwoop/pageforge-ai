@@ -77,6 +77,7 @@ export default function Dashboard() {
               products.map((p, i) => (
                 <ProductRow 
                   key={i}
+                  id={p.id}
                   name={p.name} 
                   status={p.status} 
                   sales={Math.floor(Math.random() * 100).toString()}
@@ -159,7 +160,7 @@ function StatCard({ title, value, change, changeLabel, icon }: { title: string, 
   );
 }
 
-function ProductRow({ name, status, sales, revenue, roas, image, isDraft = false }: { name: string, status: string, sales: string, revenue: string, roas: string, image: string, isDraft?: boolean }) {
+function ProductRow({ id, name, status, sales, revenue, roas, image, isDraft = false }: { id: string, name: string, status: string, sales: string, revenue: string, roas: string, image: string, isDraft?: boolean }) {
   return (
     <div className="bg-white brutalist-border p-4 flex items-center gap-6">
       <div className="w-20 h-20 brutalist-border shrink-0 bg-gray-100">
@@ -188,7 +189,7 @@ function ProductRow({ name, status, sales, revenue, roas, image, isDraft = false
 
       <div className="flex flex-col gap-2 shrink-0">
         <Link 
-          to={`/generate/${p.id}`}
+          to={`/generate/${id}`}
           className="w-10 h-10 brutalist-border flex items-center justify-center hover:bg-[var(--color-neon)] transition-colors"
         >
           <Edit2 className="w-4 h-4" />
