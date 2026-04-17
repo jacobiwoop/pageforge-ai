@@ -21,9 +21,10 @@ export default defineConfig(({mode}) => {
       hmr: process.env.DISABLE_HMR !== 'true',
       allowedHosts: true,
       proxy: {
-        '/api': 'http://127.0.0.1:8000',
-        '/sessions': 'http://127.0.0.1:8000',
-        '/exports': 'http://127.0.0.1:8000',
+        '^/(api|sessions|exports|docs|openapi.json)': {
+          target: 'http://127.0.0.1:8000',
+          changeOrigin: true,
+        }
       }
     },
   };
