@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, Eye, Target, Activity, Edit2, TrendingUp, AlertTriangle, ShoppingCart, Zap, Upload, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
