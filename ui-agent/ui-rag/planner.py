@@ -55,8 +55,19 @@ RÉPONSE JSON :
 
     print(f"🗺️  Planification des contenus par direction...")
     raw_response = _call_ollama(messages, model, stream=False)
+    
+    if not raw_response:
+        print("⚠️ Réponse vide reçue de l'IA pour la planification.")
+        return {"plans": []}
+
     plans = _parse_json_response(raw_response)
     
+    if "plans" not in plans or not plans["plans"]:
+        print(f"⚠️ Échec du parsing des plans. Réponse brute : {raw_response[:200]}...")
+        # Si on a un dictionnaire avec "error", on garde la structure pour le log
+        if "plans" not in plans:
+            plans["plans"] = []
+            
     return plans
 
 if __name__ == "__main__":

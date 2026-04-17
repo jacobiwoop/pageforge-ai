@@ -24,6 +24,7 @@ def _call_ollama(messages: list, model: str, stream: bool = True) -> dict | str:
         "options": {
             "temperature": 0.3,
             "top_p": 0.9,
+            "num_ctx": 8192,
         }
     }).encode("utf-8")
 
