@@ -347,6 +347,7 @@ from database import SessionLocal
 
 async def orchestrate_session(session_id: str, url: str):
     """Bridge between FastAPI and the existing orchestrator logic."""
+    product_name = None  # Initialisation pour la closure de update_db
     try:
         def update_db(status=None, progress=None, add_log=None, result_url=None, opencode_session_id=None):
             db = SessionLocal()
