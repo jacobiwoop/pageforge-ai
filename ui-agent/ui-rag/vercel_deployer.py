@@ -25,6 +25,7 @@ def deploy_to_vercel(session_dir: str, vercel_token: str) -> str:
         ]
 
         result = subprocess.run(cmd, cwd=session_dir, capture_output=True, text=True)
+        if result.returncode != 0:
 
         output = result.stdout + "\n" + result.stderr
         
@@ -35,20 +36,15 @@ def deploy_to_vercel(session_dir: str, vercel_token: str) -> str:
             # Chercher explicitement un pattern URL Vercel
             match = re.search(r'(https://[a-zA-Z0-9-]+\.vercel\.app)', line)
             if match:
-                if "Aliased:" in line:
-                    url_aliased = match.group(1)
-                elif "Production:" in line:
-                    url_prod = match.group(1)
-                elif not url_prod: # Fallback pour les vieilles versions du CLI
+                if "Aliased:" in line or "Production:" in line:
+                    return match.group(1)
+                elif not url_prod:
                     url_prod = match.group(1)
                     
-        # On valide toujours l'URL finale (publique) en priorité, pour contourner Vercel Authentication
-        if url_aliased:
-            return url_aliased
         if url_prod:
             return url_prod
         
-        logging.error(f"Erreur Vercel. L'URL n'a pas pu être trouvée. Output: {output}")
+        logging.error(f"Erreur Vercel. L'URL n'a pas pu être trouvée dans l'output. Output: {output}")
         return None
 
     except Exception as e:

@@ -480,12 +480,15 @@ export default function Generate() {
                     )}
                  >
                    {isPublishing ? <Loader2 className="w-4 h-4 animate-spin"/> : 
-                    isDirty ? <Sparkles className="w-4 h-4 text-amber-300" /> :
-                    isPublished ? <CheckCircle2 className="w-4 h-4 text-emerald-200" /> : <Zap className="w-4 h-4 text-amber-300" />}
+                    (isPublished && isDirty) ? <Sparkles className="w-4 h-4 text-amber-100" /> :
+                    isDirty ? <Zap className="w-4 h-4 text-amber-300" /> :
+                    isPublished ? <CheckCircle2 className="w-4 h-4 text-emerald-100" /> : <Upload className="w-4 h-4 text-zinc-400" />}
+                   
                    {isPublishing ? "Publishing..." : 
-                    isDirty ? "Update Live Page" :
-                    isPublished ? "Live on Vercel" : "Publish to Web"}
-                 </button>
+                    (isPublished && isDirty) ? "Publish Update" :
+                    isPublished ? "Live on Vercel" :
+                    isDirty ? "Publish to Web" : "Publish to Web"}
+                  </button>
                )}
             </div>
           </div>
