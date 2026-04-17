@@ -22,6 +22,8 @@ export default defineConfig(({mode}) => {
       allowedHosts: true,
       proxy: {
         '/api': 'http://127.0.0.1:8000',
+        '/sessions': 'http://127.0.0.1:8000',
+        '/exports': 'http://127.0.0.1:8000',
       }
     },
   };
