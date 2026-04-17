@@ -38,7 +38,7 @@ sleep 1
 echo "📡 [1/3] Lancement du Scraper..."
 (
     cd "$PROJECT_ROOT/headless-service"
-    npm start > "$PROJECT_ROOT/scraper.log" 2>&1
+    PORT=3005 npm start > "$PROJECT_ROOT/scraper.log" 2>&1
 ) &
 echo "   ✅ Scraper lancé en arrière-plan."
 
