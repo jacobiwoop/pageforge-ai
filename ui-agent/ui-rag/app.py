@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 import json
 import logging
@@ -309,24 +310,52 @@ async def get_status(session_id: str, db: Session = Depends(get_db)):
     )
 
 @app.get("/api/session/{session_id}/files")
-async def list_session_files(session_id: str):
-    """List all files in a specific session directory."""
-    path = os.path.join(SESSION_DIR, session_id)
-    if not os.path.exists(path):
-        return [] # Return empty list if folder not yet created
+async def get_session_files(session_id: str):
+    session_dir = os.path.join(SESSION_DIR, session_id)
+    if not os.path.exists(session_dir):
+        return []
     
     files = []
-    for filename in os.listdir(path):
-        file_path = os.path.join(path, filename)
-        if os.path.isfile(file_path):
-            stats = os.stat(file_path)
+    for f in os.listdir(session_dir):
+        if os.path.isfile(os.path.join(session_dir, f)):
+            ext = f.split(".")[-1]
             files.append({
-                "name": filename,
-                "size": stats.st_size,
-                "url": f"/sessions/{session_id}/{filename}",
-                "ext": filename.split('.')[-1] if '.' in filename else ''
+                "name": f,
+                "url": f"/sessions/{session_id}/{f}",
+                "ext": ext
             })
-    return sorted(files, key=lambda x: x["name"])
+    return files
+
+@app.delete("/api/session/{session_id}")
+async def delete_session(session_id: str, db: Session = Depends(get_db)):
+    import shutil
+    sess = db.query(models.GenerationSession).filter(models.GenerationSession.id == session_id).first()
+    if not sess:
+        raise HTTPException(status_code=404, detail="Session not found in database")
+    
+    try:
+        # 1. Supprimer de la base de données
+        db.delete(sess)
+        db.commit()
+        
+        # 2. Supprimer les dossiers physiques
+        session_dir = os.path.join(SESSION_DIR, session_id)
+        if os.path.exists(session_dir):
+            shutil.rmtree(session_dir)
+            
+        export_dir = os.path.join("exports", session_id) # Si on a un dossier par export
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
+            
+        # Si c'était un fichier direct dans exports (comme le suggérait l'ancien code)
+        export_file = os.path.join("exports", f"final_page_{session_id}.html")
+        if os.path.exists(export_file):
+            os.remove(export_file)
+
+        return {"status": "success", "message": f"Session {session_id} deleted"}
+    except Exception as e:
+        logger.error(f"Error deleting session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/products")
 async def list_products(db: Session = Depends(get_db)):

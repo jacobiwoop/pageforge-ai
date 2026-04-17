@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Filter, ExternalLink, Copy, Settings, Terminal, Loader2, Edit3 } from 'lucide-react';
+import { Download, Filter, ExternalLink, Copy, Settings, Terminal, Loader2, Edit3, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface Product {
   id: string;
@@ -31,6 +32,22 @@ export default function Products() {
       setIsLoading(false);
     });
   }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this product? All generated files will be permanently removed.")) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/session/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setProducts(prev => prev.filter(p => p.id !== id));
+      } else {
+        alert("Failed to delete product.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error contacting server.");
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -75,7 +92,8 @@ export default function Products() {
                 </td>
               </tr>
             ) : (
-              products.map((p) => (
+            <AnimatePresence mode="popLayout">
+              {products.map((p) => (
                 <ProductTableRow 
                   key={p.id}
                   image={`https://api.dicebear.com/7.x/shapes/svg?seed=${p.id}&backgroundColor=00fc40`}
@@ -85,8 +103,10 @@ export default function Products() {
                   date={p.date}
                   time={p.time}
                   url={`${API_BASE}${p.url}`}
+                  onDelete={() => handleDelete(p.id)}
                 />
-              ))
+              ))}
+            </AnimatePresence>
             )}
           </tbody>
         </table>
@@ -144,9 +164,16 @@ export default function Products() {
   );
 }
 
-function ProductTableRow({ image, name, id, status, date, time, url, disabled = false }: any) {
+function ProductTableRow({ image, name, id, status, date, time, url, onDelete, disabled = false }: any) {
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <motion.tr 
+      layout
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, scale: 0.9, backgroundColor: '#fee2e2' }}
+      transition={{ duration: 0.3 }}
+      className="hover:bg-gray-50 transition-colors"
+    >
       <td className="p-4 border-r-2 border-black w-24">
         <div className="w-16 h-16 brutalist-border bg-gray-200">
           <img src={image} alt={name} className={cn("w-full h-full object-cover", disabled && "grayscale opacity-50")} />
@@ -194,7 +221,14 @@ function ProductTableRow({ image, name, id, status, date, time, url, disabled = 
           <Edit3 className="w-3 h-3 text-[var(--color-neon)]" />
           EDIT_SESSION
         </Link>
+        <button 
+          onClick={onDelete}
+          className="px-4 py-2 brutalist-border inline-flex items-center justify-center text-red-600 hover:bg-red-50 transition-colors"
+          title="Delete Product"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </td>
-    </tr>
+    </motion.tr>
   );
 }
