@@ -12,6 +12,7 @@ load_dotenv()
 from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect, Depends
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from database import get_db, init_db
@@ -367,10 +368,17 @@ async def list_products(db: Session = Depends(get_db)):
     products = []
     for s in sessions:
         is_live = s.result_url and s.result_url.startswith("http")
+        # Thumbnail logic
+        thumb_url = f"/sessions/{s.id}/thumbnail.png"
+        full_thumb_path = os.path.join(SESSION_DIR, s.id, "thumbnail.png")
+        if not os.path.exists(full_thumb_path):
+            thumb_url = f"https://api.dicebear.com/7.x/shapes/svg?seed={s.id}&backgroundColor=00fc40"
+
         products.append({
             "id": s.id,
             "name": s.product_name or "Project Sans Nom",
             "url": s.result_url if is_live else None,
+            "thumbnail": thumb_url,
             "date": s.created_at.strftime('%Y.%m.%d'),
             "time": s.created_at.strftime('%H:%M:%S'),
             "status": "LIVE" if is_live else "DRAFT"
@@ -438,6 +446,22 @@ async def orchestrate_session(session_id: str, url: str):
             result_path = result
 
         if result_path:
+            # Nouveau : Prendre une capture d'écran pour la miniature
+            try:
+                import requests
+                final_html_path = os.path.abspath(os.path.join(SESSION_DIR, session_id, "final_page.html"))
+                if os.path.exists(final_html_path):
+                    # On utilise l'URL absolue du fichier pour Puppeteer (qui tourne sur la même machine)
+                    file_url = f"file://{final_html_path}"
+                    res = requests.post("http://localhost:3005/screenshot", json={"url": file_url}, timeout=40)
+                    if res.status_code == 200:
+                        thumb_path = os.path.join(SESSION_DIR, session_id, "thumbnail.png")
+                        with open(thumb_path, "wb") as f:
+                            f.write(res.content)
+                        logger.info(f"Screenshot saved for session {session_id}")
+            except Exception as e:
+                logger.error(f"Failed to take screenshot for session {session_id}: {e}")
+
             if result_path.startswith("http"):
                 update_db(status="completed", progress=100, result_url=result_path, opencode_session_id=opencode_session_id, product_name=product_name)
                 log_to_session("Génération et déploiement Vercel réussis !")
@@ -560,6 +584,10 @@ async def custom_404_handler(request, exc):
     if not request.url.path.startswith("/api/") and os.path.exists(index_file):
         return FileResponse(index_file)
     return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
+# Mount static folders
+app.mount("/sessions", StaticFiles(directory=SESSION_DIR), name="sessions")
+app.mount("/exports", StaticFiles(directory="exports"), name="exports")
 
 # Mount static files ONLY if the dist folder exists (e.g. built via Docker)
 if os.path.exists(dist_path):

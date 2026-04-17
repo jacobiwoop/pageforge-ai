@@ -73,7 +73,7 @@ export default function Dashboard() {
                   sales={Math.floor(Math.random() * 100).toString()}
                   revenue={`$${Math.floor(Math.random() * 1000)}`} 
                   roas="N/A" 
-                  image={`https://api.dicebear.com/7.x/shapes/svg?seed=${p.id}&backgroundColor=00fc40`}
+                  image={p.thumbnail}
                 />
               ))
             )}

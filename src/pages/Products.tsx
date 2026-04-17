@@ -96,7 +96,7 @@ export default function Products() {
               {products.map((p) => (
                 <ProductTableRow 
                   key={p.id}
-                  image={`https://api.dicebear.com/7.x/shapes/svg?seed=${p.id}&backgroundColor=00fc40`}
+                  image={p.thumbnail}
                   name={p.name}
                   id={p.id}
                   status={p.status}
@@ -112,7 +112,7 @@ export default function Products() {
         </table>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white brutalist-border p-6 flex flex-col justify-between">
           <div className="flex justify-between items-start mb-6">
             <h3 className="text-xs font-bold tracking-wider uppercase">ACTIVE_PAGES</h3>
@@ -142,23 +142,6 @@ export default function Products() {
           </div>
         </div>
 
-        <div className="bg-black text-white brutalist-border p-6 flex flex-col justify-between relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-4">
-              <Terminal className="w-4 h-4 text-[var(--color-neon)]" />
-              <h3 className="text-xs font-bold tracking-wider uppercase text-[var(--color-neon)]">SYSTEM_INSIGHT</h3>
-            </div>
-            <p className="text-xs font-mono text-gray-400 mb-6 leading-relaxed">
-              Neural patterns indicate a <span className="text-[var(--color-neon)] font-bold">14% increase</span> in generation efficiency for brutalist components. Recommended action: Synchronize metadata for all 'Draft' status items to optimize local cache.
-            </p>
-            <button className="px-4 py-2 border-2 border-[var(--color-neon)] text-[var(--color-neon)] text-xs font-bold uppercase hover:bg-[var(--color-neon)] hover:text-black transition-colors">
-              RUN_OPTIMIZATION
-            </button>
-          </div>
-          <div className="absolute right-[-20px] bottom-[-20px] opacity-10">
-            <Terminal className="w-48 h-48 text-[var(--color-neon)]" />
-          </div>
-        </div>
       </div>
     </div>
   );
