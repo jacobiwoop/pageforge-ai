@@ -176,4 +176,48 @@ BILAN
 🎉 TOUS LES TESTS PASSENT !
 ```
 
-Si les 3 passent, on peut attaquer le vrai refactor de `coder.py`. Lance le test et dis-moi ce que tu obtiens.
+## Si les 3 passent, on peut attaquer le vrai refactor de `coder.py`. Lance le test et dis-moi ce que tu obtiens.
+
+---
+
+---
+
+---
+
+---
+
+---
+
+Bonne nouvelle — les fichiers ont été créés ! Le problème est clair : le script a **timeout sur l'event SSE** mais OpenCode a quand même fait le travail. Regarde :
+
+```
+ls suggestion/sessions/mini_test
+App.jsx  index.html  main.jsx  ← TOUT EST LÀ ✅
+```
+
+Le problème est dans la détection de fin. Deux choses à corriger :
+
+1. **L'event de fin n'est pas `session.idle`** dans cette version — il faut regarder ce qui arrive vraiment sur le SSE
+2. **Le polling fallback** (`get_session_status`) ne fonctionne pas parce que l'endpoint `/session/status` ne prend pas un param `directory`Le diagnostic est clair. Je réécris le script avec une approche **dual : SSE + polling** robuste :---
+
+## Ce qui s'est passé
+
+**Bonne nouvelle** : OpenCode a parfaitement travaillé. Les 3 fichiers sont là (`App.jsx`, `index.html`, `main.jsx`). Le test a juste mal détecté la fin.
+
+**Le vrai problème** : le script écoutait le SSE `/event` en attendant `session.idle`, mais le SSE ne recevait que des `server.heartbeat`. Pourquoi ? Probablement parce que **le message avait déjà été envoyé et traité** avant que l'écoute SSE commence — OpenCode était déjà fini.
+
+---
+
+## Ce que la v3 change
+
+**Approche principale — HTTP synchrone** : `POST /session/{id}/message` bloque jusqu'à la fin. C'est le comportement documenté pour cet endpoint. Simple, fiable, pas de race condition.
+
+**Thread SSE en parallèle** : tourne en background pour afficher l'activité live (quels fichiers sont édités) sans bloquer.
+
+**Fallback polling** : si le HTTP timeout quand même, on interroge `/session/{id}` toutes les 3 secondes pour confirmer que c'est idle.
+
+**Avant de relancer**, supprime les fichiers générés pour repartir à zéro :
+
+```bash
+
+```
