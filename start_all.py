@@ -85,10 +85,11 @@ def start_processes():
     
     # 3. Frontend (React/Vite) -> Port 3000
     log("💻 [3/3] Lancement du Frontend (Vite)...", "blue")
+    frontend_cwd = os.path.join(PROJECT_ROOT, "frontend")
     frontend_log = open(os.path.join(PROJECT_ROOT, "frontend.log"), "w")
     p_frontend = subprocess.Popen(
         ["npm", "run", "dev"],
-        cwd=PROJECT_ROOT,
+        cwd=frontend_cwd,
         stdout=frontend_log,
         stderr=subprocess.STDOUT
     )

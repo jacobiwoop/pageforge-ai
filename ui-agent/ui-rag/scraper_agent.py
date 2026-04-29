@@ -28,34 +28,79 @@ def scrape_product(url: str, output_file: str, log_callback=None):
         return {"success": False, "error": f"Script {script_name} non trouvé"}
 
     try:
-        with open(script_path, "r", encoding="utf-8") as f:
-            script_content = f.read()
-
-        # Injection de l'URL (le script Amazon utilise {{ target_url }}, le script Alibaba utilise const URL = "...")
         if is_amazon:
-            script_body = script_content.replace("{{ target_url }}", url)
+            log("📡 Envoi à l'API externe OmkarCloud...")
+            
+            # 1. On extrait l'ASIN de l'URL Amazon
+            asin_match = re.search(r"/(?:dp|gp/product)/([a-zA-Z0-9]{10})", url)
+            if not asin_match:
+                log("❌ Impossible de trouver l'ASIN dans l'URL Amazon")
+                return {"success": False, "error": "ASIN introuvable"}
+            asin = asin_match.group(1)
+            
+            # 2. On interroge l'API
+            api_url = f"https://amazon-scraper-api.omkar.cloud/amazon/product-details?asin={asin}&country_code=FR"
+            headers = {
+                "API-Key": "ok_a673797e0f92c370969bb5033664a509",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+            
+            log(f"🔗 Connexion à OmkarCloud API pour l'ASIN {asin}...")
+            response = requests.get(api_url, headers=headers, timeout=60)
+            log(f"📥 Réponse reçue (Code: {response.status_code})")
+            response.raise_for_status()
+            omkar_data = response.json()
+            
+            # 3. Formatage pour simuler l'ancienne structure
+            images = []
+            if omkar_data.get("main_image_url"):
+                images.append(omkar_data.get("main_image_url"))
+            if omkar_data.get("additional_image_urls"):
+                images.extend(omkar_data.get("additional_image_urls"))
+                
+            attributes = {}
+            if isinstance(omkar_data.get("technical_details"), dict):
+                attributes.update(omkar_data.get("technical_details"))
+            if isinstance(omkar_data.get("product_details"), dict):
+                attributes.update(omkar_data.get("product_details"))
+                
+            result = {
+                "status": "success",
+                "data": {
+                    "success": True,
+                    "title": omkar_data.get("product_name", ""),
+                    "price": str(omkar_data.get("current_price", "")),
+                    "images": images,
+                    "features": omkar_data.get("key_features", []),
+                    "attributes": attributes,
+                    "url": omkar_data.get("link", url)
+                }
+            }
         else:
+            with open(script_path, "r", encoding="utf-8") as f:
+                script_content = f.read()
+
             # Pour Alibaba, on remplace la ligne const URL = "..."
             script_body = re.sub(r'const URL = ".*?";', f'const URL = "{url}";', script_content, count=1)
 
-        log(f"📡 Envoi au service headless local (Port 3005) via {script_name}...")
-        
-        endpoint = "http://127.0.0.1:3005/run"
-        payload = {
-            "script": script_body,
-            "timeout": 120000 # Augmenté à 120s
-        }
+            log(f"📡 Envoi au service headless local (Port 3005) via {script_name}...")
+            
+            endpoint = "http://127.0.0.1:3005/run"
+            payload = {
+                "script": script_body,
+                "timeout": 120000 # Augmenté à 120s
+            }
 
-        log(f"🔗 Connexion à {endpoint}...")
-        response = requests.post(
-            endpoint, 
-            json=payload, 
-            timeout=150,
-            proxies={"http": None, "https": None} # Désactive les proxys système qui pourraient bloquer le local
-        )
-        log(f"📥 Réponse reçue (Code: {response.status_code})")
-        response.raise_for_status()
-        result = response.json()
+            log(f"🔗 Connexion à {endpoint}...")
+            response = requests.post(
+                endpoint, 
+                json=payload, 
+                timeout=150,
+                proxies={"http": None, "https": None} # Désactive les proxys système qui pourraient bloquer le local
+            )
+            log(f"📥 Réponse reçue (Code: {response.status_code})")
+            response.raise_for_status()
+            result = response.json()
 
         # Sauvegarde du résultat brut pour le Copywriter
         with open(output_file, "w", encoding="utf-8") as f:
