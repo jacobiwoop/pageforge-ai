@@ -40,10 +40,11 @@ interface SessionFile {
   ext: string;
 }
 
-const FileItem = ({ name, icon, indent = 0, active = false, onClick }: { name: string, icon: React.ReactNode, indent?: number, active?: boolean, onClick?: () => void }) => (
-  <div onClick={onClick} className={`flex items-center gap-1.5 py-1 text-[13px] cursor-pointer hover:bg-white/5 ${active ? 'bg-[#37373D] text-white' : 'text-[#CCC]'}`} style={{ paddingLeft: `${indent * 12 + 12}px`, paddingRight: '12px' }}>
+const FileItem = ({ name, icon, indent = 0, active = false, hasError = false, onClick }: { name: string, icon: React.ReactNode, indent?: number, active?: boolean, hasError?: boolean, onClick?: () => void }) => (
+  <div onClick={onClick} className={`flex items-center gap-1.5 py-1 text-[13px] cursor-pointer hover:bg-white/5 relative ${active ? 'bg-[#37373D] text-white' : 'text-[#CCC]'}`} style={{ paddingLeft: `${indent * 12 + 12}px`, paddingRight: '24px' }}>
     <span className="w-4 h-4 flex items-center justify-center shrink-0">{icon}</span>
     <span className="truncate">{name}</span>
+    {hasError && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)]" title="Erreur LSP détectée" />}
   </div>
 );
 
@@ -84,6 +85,20 @@ export default function Editor() {
   const [sessionFiles, setSessionFiles] = useState<SessionFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<SessionFile | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
+
+  // ── OPENCODE SSE STATES ──
+  const [liveDelta, setLiveDelta] = useState("");
+  const [todos, setTodos] = useState<any[]>([]);
+  const [isBusy, setIsBusy] = useState(false);
+  const [question, setQuestion] = useState<{ id: string, text: string } | null>(null);
+  const [diagnostics, setDiagnostics] = useState<any[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, liveDelta]);
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
@@ -139,53 +154,180 @@ export default function Editor() {
     }
   }, [selectedFile]);
 
-  // Écoute en temps réel du backend
+  // Écoute SSE (Server-Sent Events) pour le temps réel OpenCode
   useEffect(() => {
-    // Si on est sur la page de création, on ne fait rien
     if (!id || id === 'new') return;
-    const fetchStatus = async () => {
+
+    let es: EventSource | null = null;
+    let retryTimeout: NodeJS.Timeout;
+
+    const connectSSE = () => {
+      es = new EventSource(`/api/session/${id}/stream`);
+
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const type = data.type;
+          const props = data.properties || {};
+
+          switch (type) {
+            case 'message.part.delta':
+              setLiveDelta(prev => prev + (props.delta || ""));
+              break;
+            case 'message.updated':
+              // Quand le message est mis à jour, on l'ajoute à l'historique et on vide le delta
+              if (props.message && props.message.role === 'assistant') {
+                const text = props.message.content?.map((c:any) => c.text).join('') || "";
+                if (text.trim()) {
+                  setMessages(prev => {
+                    // Avoid duplicates
+                    if (prev.find(m => m.id === props.message.id)) return prev;
+                    return [...prev, { id: props.message.id, role: 'assistant', text: text }];
+                  });
+                }
+                setLiveDelta(""); 
+              }
+              break;
+            case 'todo.updated':
+              setTodos(props.todos || []);
+              break;
+            case 'session.status':
+              setIsBusy(props.status === 'busy');
+              break;
+            case 'session.idle':
+              setIsBusy(false);
+              setLiveDelta(""); // Nettoyer si on était en train de taper
+              fetchSessionFiles(id);
+              setStatus("completed"); // Marquer fini côté frontend
+              setIsGenerated(true);
+              break;
+            case 'question.asked':
+              setQuestion({ id: props.id, text: props.question || "J'ai besoin d'une précision." });
+              break;
+            case 'lsp.client.diagnostics':
+              setDiagnostics(props.diagnostics || []);
+              break;
+            case 'file.edited':
+              setToastMessage(`Fichier modifié : ${props.name}`);
+              setTimeout(() => setToastMessage(null), 3000);
+              fetchSessionFiles(id);
+              break;
+            case 'session.error':
+              console.error("OpenCode Error:", props.error);
+              setStatus("failed");
+              setIsBusy(false);
+              break;
+          }
+        } catch (e) {
+          console.error("Erreur parsing SSE:", e);
+        }
+      };
+
+      es.onerror = () => {
+        console.warn("SSE déconnecté, tentative de reconnexion...");
+        if (es) {
+          es.close();
+        }
+        // Retry connection after 3 seconds
+        retryTimeout = setTimeout(connectSSE, 3000);
+      };
+    };
+
+    // On lance la première connexion avec un petit délai pour laisser la BD se mettre à jour
+    const startTimeout = setTimeout(connectSSE, 1000);
+
+    return () => {
+      clearTimeout(startTimeout);
+      clearTimeout(retryTimeout);
+      if (es) es.close();
+    };
+  }, [id]);
+
+  // Récupération de l'état initial au montage
+  useEffect(() => {
+    if (!id || id === 'new') return;
+    const fetchInitialStatus = async () => {
       try {
         const response = await fetch(`/api/status/${id}`);
         if (response.ok) {
           const data = await response.json();
-          setStatus(data.status);
           setProgress(data.progress);
+          setStatus(data.status);
+          if (data.result_url) setResultUrl(data.result_url);
+          if (data.status === "completed") setIsGenerated(true);
           
-          // Mise à jour du chat avec les vrais messages de l'IA !
-          if (data.logs && data.logs.length > logCountRef.current) {
-            const newLogs = data.logs.slice(logCountRef.current);
-            const liveMessages = newLogs.map((log: string, index: number) => ({
-              id: Date.now() + index,
+          // Initialiser l'historique avec les logs existants
+          if (data.logs && data.logs.length > 0) {
+            const initialLogs = data.logs.map((log: string, i: number) => ({
+              id: `log-${i}`,
               role: "assistant",
               text: log
             }));
-            setMessages(prev => [...prev, ...liveMessages]);
+            setMessages(prev => [...prev, ...initialLogs]);
             logCountRef.current = data.logs.length;
           }
-          // Si l'IA a fini ou a échoué, on arrête le rafraîchissement
-          if (data.status === "completed" || data.status === "failed") {
-            setIsGenerated(data.status === "completed");
-            if (data.result_url) {
-              setResultUrl(data.result_url);
-            }
-          }
-          fetchSessionFiles(id);
         }
       } catch (err) {
-        console.error("Erreur de connexion au backend:", err);
+        console.error("Erreur Fetch Initial:", err);
       }
     };
-    // On lance une première fois tout de suite
-    fetchStatus();
+    fetchInitialStatus();
+  }, [id]);
+
+  const statusRef = useRef(status);
+  useEffect(() => { statusRef.current = status; }, [status]);
+
+  // Polling de secours pour les logs de l'orchestrateur
+  useEffect(() => {
+    if (!id || id === 'new') return;
     
-    // Puis on demande au backend toutes les 2 secondes
-    const intervalId = setInterval(() => {
-      if (status !== 'completed' && status !== 'failed') {
-        fetchStatus();
+    let isMounted = true;
+    let timerId: NodeJS.Timeout;
+
+    const poll = async () => {
+      if (!isMounted) return;
+      if (statusRef.current === 'completed' || statusRef.current === 'failed') return;
+
+      try {
+        const response = await fetch(`/api/status/${id}`);
+        if (response.ok && isMounted) {
+          const data = await response.json();
+          setProgress(data.progress);
+          if (data.result_url && !resultUrl) setResultUrl(data.result_url);
+          
+          if (data.logs && data.logs.length > logCountRef.current) {
+            const newLogs = data.logs.slice(logCountRef.current);
+            const orchestratorMessages = newLogs.map((log: string, index: number) => ({
+              id: `log-${Date.now()}-${index}`,
+              role: "assistant",
+              text: log
+            }));
+            setMessages(prev => [...prev, ...orchestratorMessages]);
+            logCountRef.current = data.logs.length;
+          }
+          
+          // Mise à jour de l'état si le backend a fini
+          if (data.status === "completed" || data.status === "failed") {
+            setStatus(data.status);
+          }
+        }
+      } catch (err) {
+        console.error("Erreur Polling:", err);
       }
-    }, 2000);
-    return () => clearInterval(intervalId);
-  }, [id, status]);
+
+      // Prochain poll dans 2 secondes
+      if (isMounted && statusRef.current !== 'completed' && statusRef.current !== 'failed') {
+        timerId = setTimeout(poll, 2000);
+      }
+    };
+
+    poll(); // Lancement initial
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timerId);
+    };
+  }, [id]);
 
   const handleSend = async () => {
     if (!inputVal.trim() || !id || id === 'new') return;
@@ -227,7 +369,7 @@ export default function Editor() {
   };
 
   const handleStartGeneration = async () => {
-    if (!url.trim()) return;
+    if (!url.trim() || isStarting) return;
     setIsStarting(true);
     try {
       const response = await fetch("/api/generate", {
@@ -366,6 +508,24 @@ export default function Editor() {
                   )}
                 </motion.div>
               ))}
+              
+              {/* LIVE DELTA (Stream text en cours) */}
+              {liveDelta && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-start"
+                >
+                  <div className="p-3 rounded-xl max-w-[90%] text-sm bg-transparent text-[#CCC] border border-[#3B82F6]/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                    <div className="flex items-center gap-2 mb-2">
+                       <div className="w-4 h-4 rounded-full border-2 border-t-[#3B82F6] border-white/10 animate-spin" />
+                       <span className="text-xs text-[#3B82F6] font-bold">L'IA rédige...</span>
+                    </div>
+                    <div className="whitespace-pre-wrap">{liveDelta}</div>
+                  </div>
+                </motion.div>
+              )}
+              <div ref={chatEndRef} />
             </AnimatePresence>
           </div>
 
@@ -455,18 +615,38 @@ export default function Editor() {
                   />
                 ) : (
                   // ⏳ En cours de génération : Animation d'attente stylée
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#111] to-[#050505] flex flex-col items-center justify-center space-y-6">
-                    <div className="w-24 h-24 rounded-full border-4 border-white/10 border-t-[#3B82F6] animate-spin" />
-                    <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-[#888]">
-                      L'IA forge votre page...
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#111] to-[#050505] flex flex-col items-center justify-center p-8">
+                    <div className="w-16 h-16 mb-6 rounded-full border-4 border-white/10 border-t-[#3B82F6] animate-spin" />
+                    <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-[#888] mb-8">
+                      {isBusy ? "L'IA travaille sur votre page..." : "L'IA analyse votre demande..."}
                     </h2>
-                    <div className="w-64 h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-primary transition-all duration-500 ease-out"
-                        style={{ width: `${progress}%` }} 
-                      />
-                    </div>
-                    <p className="text-sm text-[#555] font-mono">{progress}% accompli</p>
+                    
+                    {/* Stepper des tâches */}
+                    {todos.length > 0 ? (
+                      <div className="w-full max-w-md space-y-3 bg-black/40 p-6 rounded-2xl border border-white/5 backdrop-blur">
+                        {todos.map(todo => (
+                          <div key={todo.id} className="flex items-center gap-3">
+                            {todo.status === 'done' ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                            ) : todo.status === 'in-progress' ? (
+                              <RefreshCw className="w-5 h-5 text-[#3B82F6] animate-spin shrink-0" />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full border-2 border-[#555] shrink-0" />
+                            )}
+                            <span className={`text-sm ${todo.status === 'done' ? 'text-[#888] line-through' : todo.status === 'in-progress' ? 'text-white font-medium' : 'text-[#555]'}`}>
+                              {todo.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="w-64 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-primary transition-all duration-500 ease-out"
+                          style={{ width: `${progress}%` }} 
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -501,6 +681,7 @@ export default function Editor() {
                           name={file.name} 
                           icon={<FileText className="w-3.5 h-3.5" />} 
                           active={selectedFile?.name === file.name}
+                          hasError={diagnostics.some(d => d.filename === file.name && d.severity === 'Error')}
                           onClick={() => setSelectedFile(file)}
                         />
                       ))
@@ -683,6 +864,48 @@ export default function Editor() {
         )}
 
       </div>
+      
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-6 right-6 bg-[#111] border border-white/10 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-50">
+             <CheckCircle2 className="w-5 h-5 text-green-500" />
+             <span className="text-sm font-medium">{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Question Modal */}
+      <AnimatePresence>
+        {question && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+             <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.9, opacity:0}} className="bg-[#111] border border-white/10 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+                <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-[#3B82F6]">
+                  <Zap className="w-5 h-5" /> L'IA a besoin d'une précision
+                </h3>
+                <p className="text-[#CCC] mb-6">{question.text}</p>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  const reply = fd.get("reply") as string;
+                  if (!reply) return;
+                  await fetch(`/api/session/${id}/reply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: reply })
+                  });
+                  setQuestion(null);
+                }}>
+                  <input name="reply" autoFocus className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white mb-4 focus:outline-none focus:border-[#3B82F6]" placeholder="Votre réponse..." />
+                  <div className="flex justify-end gap-3">
+                    <button type="button" onClick={() => setQuestion(null)} className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10">Ignorer</button>
+                    <button type="submit" className="px-6 py-2 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] font-bold transition-colors">Répondre</button>
+                  </div>
+                </form>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

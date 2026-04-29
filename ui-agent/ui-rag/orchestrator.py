@@ -14,11 +14,11 @@ from coder import generate_html
 # Import des fonctions de main.py pour l'automatisation du design
 from main import run_pipeline, expand_to_system_prompt
 
-def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = None, log_callback=None, progress_callback=None):
+def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = None, log_callback=None, progress_callback=None, opencode_session_id=None, turbo=True):
     def log(msg):
         if log_callback:
             log_callback(msg)
-        print(msg)
+        # On supprime le print() ici car log_callback s'en occupe déjà via le logger
 
     def set_progress(pct: int):
         if progress_callback:
@@ -35,6 +35,8 @@ def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = 
     os.makedirs(os.path.join(base_dir, "exports"), exist_ok=True)
     
     log(f"\n🚀 DÉMARRAGE DE L'ORCHESTRATION POUR : {url}")
+    if turbo:
+        log("⚡ MODE TURBO ACTIVÉ (Génération accélérée)")
     log(f"📂 DOSSIER DE SESSION : {base_dir}")
     set_progress(5)
     
@@ -71,12 +73,10 @@ def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = 
 
     # 3. GÉNÉRATION AUTOMATIQUE DU DESIGN (Style)
     log("\n--- 3. GÉNÉRATION DU DESIGN SYSTEM (STYLE) ---")
-    set_progress(40)
+    set_progress(45)
     product_query = synthesis.get('title', 'produit e-commerce')
     design_brief = synthesis.get('design_brief', '')
     log(f"   🎨 Analyse du style pour : {product_query}")
-    if design_brief:
-        log(f"   📝 Brief Visuel : {design_brief}")
     
     direction, analysis = run_pipeline(product_query, model, as_json=True, verbose=False, design_brief=design_brief)
     
@@ -87,40 +87,47 @@ def run_full_pipeline(url: str, model: str = "qwen3.5:cloud", session_id: str = 
         f.write(system_prompt)
     log(f"   ✅ Spec générée : {spec_path}")
 
-    # 4. STRATÉGIES
-    log("\n--- 4. DÉFINITION DES STRATÉGIES ---")
-    set_progress(55)
-    strategies = generate_marketing_strategies(synthesis, model=model)
-    with open(strategies_path, "w", encoding="utf-8") as f:
-        json.dump(strategies, f, indent=2, ensure_ascii=False)
+    final_content = None
+    if not turbo:
+        # 4. STRATÉGIES
+        log("\n--- 4. DÉFINITION DES STRATÉGIES ---")
+        set_progress(55)
+        strategies = generate_marketing_strategies(synthesis, model=model)
+        with open(strategies_path, "w", encoding="utf-8") as f:
+            json.dump(strategies, f, indent=2, ensure_ascii=False)
 
-    # 5. PLANIFICATION
-    log("\n--- 5. PLANIFICATION DES MODULES ---")
-    set_progress(65)
-    plans_data = plan_page_content(synthesis, strategies, model=model)
-    with open(plans_path, "w", encoding="utf-8") as f:
-        json.dump(plans_data, f, indent=2, ensure_ascii=False)
+        # 5. PLANIFICATION
+        log("\n--- 5. PLANIFICATION DES MODULES ---")
+        set_progress(65)
+        plans_data = plan_page_content(synthesis, strategies, model=model)
+        with open(plans_path, "w", encoding="utf-8") as f:
+            json.dump(plans_data, f, indent=2, ensure_ascii=False)
 
-    # 6. RÉDACTION DES MODULES
-    log("\n--- 6. RÉDACTION DES MODULES (DIRECTION 1) ---")
-    set_progress(78)
-    plans = plans_data.get('plans', [])
-    if not plans:
-        log("❌ Aucun plan généré. Arrêt.")
-        return
-        
-    first_plan = plans[0]
-    final_content = generate_module_content(first_plan, synthesis, model=model)
+        # 6. RÉDACTION DES MODULES
+        log("\n--- 6. RÉDACTION DES MODULES (DIRECTION 1) ---")
+        set_progress(78)
+        plans = plans_data.get('plans', [])
+        if not plans:
+            log("❌ Aucun plan généré. Arrêt.")
+            return
+            
+        first_plan = plans[0]
+        final_content = generate_module_content(first_plan, synthesis, model=model)
+    else:
+        # En mode turbo, on utilise directement la synthèse comme base de contenu
+        log("\n⏩ Saut des étapes 4, 5 et 6 (Mode Turbo)")
+        final_content = synthesis
+        set_progress(80)
 
     # 7. GÉNÉRATION HTML FINAL
     log("\n--- 7. GÉNÉRATION HTML FINAL (FUSION STYLE + CONTENU) ---")
     set_progress(90)
-    html_result = generate_html(spec_path, product_query, model, content_data=final_content, cwd=base_dir)
+    html_result = generate_html(spec_path, product_query, model, content_data=final_content, cwd=base_dir, opencode_session_id=opencode_session_id)
     
-    opencode_session_id = None
     if isinstance(html_result, dict) and html_result.get("success"):
         html_code = html_result.get("html", "")
-        opencode_session_id = html_result.get("session_id")
+        # Si opencode_session_id a été fourni, on le garde. Sinon on prend celui retourné par generate_html
+        opencode_session_id = opencode_session_id or html_result.get("session_id")
     else:
         log(f"   ❌ Erreur de génération HTML: {html_result}")
         return

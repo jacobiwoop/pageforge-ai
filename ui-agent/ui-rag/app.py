@@ -20,6 +20,7 @@ import models
 import auth
 import subprocess
 from orchestrator import run_full_pipeline
+import coder
 
 OPENCODE_AUTH_DIR = os.path.expanduser("~/.local/share/opencode")
 OPENCODE_AUTH_PATH = os.path.join(OPENCODE_AUTH_DIR, "auth.json")
@@ -275,7 +276,7 @@ async def list_orders(db: Session = Depends(get_db)):
 
 @app.post("/api/generate")
 async def start_generation(request: GenerationRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    session_id = str(uuid.uuid4())
+    session_id = str(uuid.uuid4())[:8]
     logger.info(f"Starting generation for session {session_id} - URL: {request.url}")
     
     # Initialize session state in DB
@@ -384,6 +385,80 @@ async def list_products(db: Session = Depends(get_db)):
             "status": "LIVE" if is_live else "DRAFT"
         })
     return products
+    
+# ── SSE STREAMING (OPENCODE TO FRONTEND) ─────────────────────────────────────
+from fastapi.responses import StreamingResponse
+import httpx
+
+@app.get("/api/session/{session_id}/stream")
+async def stream_session_events(session_id: str, db: Session = Depends(get_db)):
+    """Bridge to stream OpenCode events to the frontend via SSE."""
+    session = db.query(models.GenerationSession).filter(models.GenerationSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    opencode_session_id = session.opencode_session_id
+    if not opencode_session_id:
+        # If the OpenCode session hasn't started yet, we might want to wait or just return empty for now.
+        # But a robust way is to just stream empty lines until it's set, or the frontend can poll until ready.
+        raise HTTPException(status_code=400, detail="OpenCode session not initialized yet")
+
+    async def event_generator():
+        opencode_url = os.environ.get("OPENCODE_URL", "http://localhost:4096")
+        
+        # We need a long-lived async HTTP client
+        async with httpx.AsyncClient(timeout=None) as client:
+            try:
+                async with client.stream("GET", f"{opencode_url}/global/event") as response:
+                    async for line in response.aiter_lines():
+                        if not line.startswith("data: "):
+                            continue
+                            
+                        try:
+                            # GlobalEvent structure: { "directory": "...", "payload": { "type": "...", "properties": {...} } }
+                            global_event = json.loads(line[6:])
+                            event = global_event.get("payload", {})
+                            props = event.get("properties", {})
+                            
+                            # Filtrer pour ne garder que la session actuelle
+                            if props.get("sessionID") == opencode_session_id:
+                                # Relayer l'événement au frontend
+                                yield f"data: {json.dumps(event)}\n\n"
+                        except json.JSONDecodeError:
+                            continue
+            except Exception as e:
+                logger.error(f"SSE stream error for {session_id}: {e}")
+                yield f"data: {json.dumps({'type': 'session.error', 'properties': {'error': str(e)}})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+class ReplyRequest(BaseModel):
+    message: str
+
+@app.post("/api/session/{session_id}/reply")
+async def reply_to_session(session_id: str, request: ReplyRequest, db: Session = Depends(get_db)):
+    """Send a reply or additional prompt to an ongoing OpenCode session."""
+    session = db.query(models.GenerationSession).filter(models.GenerationSession.id == session_id).first()
+    if not session or not session.opencode_session_id:
+        raise HTTPException(status_code=404, detail="Active OpenCode session not found")
+        
+    opencode_url = os.environ.get("OPENCODE_URL", "http://localhost:4096")
+    payload = {
+        "parts": [{"type": "text", "text": request.message}]
+    }
+    
+    # Using prompt_async so we don't block waiting for the AI to finish here.
+    # The frontend will monitor progress via the SSE stream.
+    async with httpx.AsyncClient() as client:
+        res = await client.post(
+            f"{opencode_url}/session/{session.opencode_session_id}/prompt_async",
+            json=payload,
+            timeout=10.0
+        )
+        if res.status_code not in (200, 204):
+            raise HTTPException(status_code=res.status_code, detail=f"OpenCode Error: {res.text}")
+            
+    return {"status": "success", "message": "Reply sent to AI"}
 
 from database import SessionLocal
 
@@ -426,6 +501,13 @@ async def orchestrate_session(session_id: str, url: str):
         def progress_callback(pct: int):
             update_db(progress=pct)
 
+        # Création anticipée de la session OpenCode pour permettre le streaming SSE immédiat
+        base_dir = os.path.abspath(os.path.join(SESSION_DIR, session_id))
+        os.makedirs(base_dir, exist_ok=True)
+        opencode_session_id = coder.create_session(base_dir, title=f"Projet {session_id}")
+        update_db(opencode_session_id=opencode_session_id)
+        log_to_session(f"🔗 Session OpenCode initialisée : {opencode_session_id}")
+
         # Run the pipeline (blocking call in thread to avoid blocking event loop)
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
@@ -435,13 +517,15 @@ async def orchestrate_session(session_id: str, url: str):
             "qwen3.5:cloud", 
             session_id,
             log_to_session,  # log callback
-            progress_callback  # progress callback
+            progress_callback,  # progress callback
+            opencode_session_id # <--- We pass the pre-created ID
         )
 
-        opencode_session_id = None
         product_name = None
         if isinstance(result, tuple) and len(result) == 3:
-            result_path, opencode_session_id, product_name = result
+            result_path, returned_opencode_id, product_name = result
+            if returned_opencode_id:
+                opencode_session_id = returned_opencode_id
         else:
             result_path = result
 
@@ -493,7 +577,6 @@ async def refactor_session(request: RefactorRequest, background_tasks: Backgroun
     return {"status": "started"}
 
 async def orchestrate_refactor(session_id: str, prompt: str, opencode_session_id: str):
-    import subprocess
     try:
         def update_db(status=None, add_log=None):
             db = SessionLocal()
@@ -514,24 +597,13 @@ async def orchestrate_refactor(session_id: str, prompt: str, opencode_session_id
         
         base_dir = os.path.join(SESSION_DIR, session_id)
         
-        # 1. Call OpenCode
-        cmd = [
-            "opencode", "run",
-            "--model", "ollama-cloud/qwen3-coder-next",
-            "--session", opencode_session_id,
-            "--dangerously-skip-permissions",
-            prompt
-        ]
-        
-        env = os.environ.copy()
-        home = os.path.expanduser("~")
-        env["PATH"] = f"{home}/.opencode/bin:{home}/.bun/bin:{env.get('PATH', '')}"
-
         update_db(add_log="   ⚙️ Exécution de la modification par l'IA...")
-        result = subprocess.run(cmd, env=env, capture_output=True, text=True, cwd=base_dir, timeout=600)
         
-        if result.returncode != 0:
-            update_db(status="completed", add_log=f"❌ Erreur IA: {result.stderr or result.stdout}")
+        # Appel de notre fonction refactorisée
+        res = coder.modify_html(opencode_session_id, base_dir, prompt, model="ollama-cloud/qwen3-coder-next")
+        
+        if not res.get("success"):
+            update_db(status="completed", add_log=f"❌ Erreur IA: {res.get('error')}")
             return
             
         # Update local completion

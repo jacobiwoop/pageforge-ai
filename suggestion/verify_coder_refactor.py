@@ -16,7 +16,7 @@ def verify():
     
     # Test 1 : Génération
     print("\n🚀 TEST 1 : Génération multi-fichiers")
-    query = "Crée 3 fichiers : index.html, main.jsx, App.jsx. Une app de cuisine simple."
+    query = "Crée une app de cuisine simple. Le fichier principal doit être nommé 'final_page.html'."
     
     res = coder.generate_html(spec_path, query, model=None) # On laisse OpenCode choisir le modèle
     

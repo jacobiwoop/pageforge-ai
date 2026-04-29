@@ -11,8 +11,8 @@ import urllib.error
 OLLAMA_URL = "http://localhost:11434/api/chat"
 DEFAULT_MODEL = "qwen3.5:cloud"
 
-MAX_RETRIES = 5
-RETRY_DELAY = 15  # secondes entre chaque retry
+MAX_RETRIES = 10
+RETRY_DELAY = 5  # secondes entre chaque retry
 
 
 def _call_ollama(messages: list, model: str, stream: bool = True) -> dict | str:
